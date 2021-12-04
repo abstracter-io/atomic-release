@@ -163,7 +163,6 @@ const semanticRelease = gitSemanticRelease({
    },
 });
 
-// release is a promise
 semanticRelease.then((release) => {
   // Print the next version (a string)
   release.getNextVersion().then(console.log);
@@ -187,7 +186,7 @@ semanticRelease.then((release) => {
 
     // Print each previous version changelog
     for (const version of versions) {
-      gitConventionalRelease.getChangelogByVersion(version).then((changelog) => {
+      semanticRelease.getChangelogByVersion(version).then((changelog) => {
         console.log(version);
         console.log(changelog);
       });
