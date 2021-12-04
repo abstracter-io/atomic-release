@@ -24,7 +24,7 @@ Type: `string`
 ```js
 const { ExecaCommand } = require("@abstracter/atomic-release/commands");
 
-class B extends ExecCommand {
+class MoveCommand extends ExecCommand {
   async do() {
     await this.execa("mv", ["a", "b"]);
   }

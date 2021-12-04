@@ -1,9 +1,8 @@
 import * as SDK from "../";
 import * as Commands from "../commands";
 import { Logger } from "../ports/logger";
-import { GitClient } from "../ports/git-client";
 import { Memoize, memoize } from "../utils/memoize";
-import { GitExecaClient } from "../adapters/git-execa-client";
+import { GitStrategy, GitStrategyOptions } from "./git-strategy";
 import { processStdoutLogger } from "../adapters/process-stdout-logger";
 
 type BranchConfig = {
@@ -11,12 +10,10 @@ type BranchConfig = {
   npmRegistryDistTag: string;
 };
 
-type GithubNpmPackageStrategyOptions = SDK.StrategyOptions & {
+type GithubNpmPackageStrategyOptions = GitStrategyOptions & {
   remote?: string;
 
   gitActor?: string;
-
-  gitClient?: GitExecaClient;
 
   packageRoot?: string;
 
@@ -37,12 +34,11 @@ type GithubNpmPackageStrategyOptions = SDK.StrategyOptions & {
   };
 };
 
-class GithubNpmPackageStrategy extends SDK.Strategy<GithubNpmPackageStrategyOptions> {
+class GithubNpmPackageStrategy extends GitStrategy<GithubNpmPackageStrategyOptions> {
   private readonly commandsLogger: Logger = processStdoutLogger({ name: this.getName() });
 
   private readonly remote: string;
   private readonly memoize: Memoize;
-  private readonly gitClient: GitClient;
   private readonly packageRoot: string;
   private readonly workingDirectory: string;
   private readonly changelogFilePath: string;
@@ -56,17 +52,6 @@ class GithubNpmPackageStrategy extends SDK.Strategy<GithubNpmPackageStrategyOpti
     this.workingDirectory = options.workingDirectory ?? process.cwd();
     this.packageRoot = options.packageRoot ?? this.workingDirectory;
     this.changelogFilePath = options.changelogFilePath ?? `${this.workingDirectory}/CHANGELOG.md`;
-
-    if (!options.gitClient) {
-      this.gitClient = new GitExecaClient({
-        remote: this.options.remote,
-        workingDirectory: this.workingDirectory,
-      });
-    }
-    //
-    else {
-      this.gitClient = options.gitClient;
-    }
   }
 
   private async getBranchName(): Promise<string> {
@@ -272,21 +257,17 @@ class GithubNpmPackageStrategy extends SDK.Strategy<GithubNpmPackageStrategyOpti
     };
   }
 
-  protected async shouldRun(): Promise<boolean> {
-    const branchName = await this.getBranchName();
-    const localHash = await this.gitClient.refHash(branchName);
-    const remoteHash = await this.gitClient.remoteBranchHash(branchName);
+  protected override async shouldRun(): Promise<boolean> {
+    const shouldRun = await super.shouldRun();
 
-    this.logger.info(`Local branch hash is ${localHash}`);
-    this.logger.info(`Remote branch hash is ${remoteHash}`);
+    if (shouldRun) {
+      const nextVersion = await this.options.release.getNextVersion();
+      const prevVersion = await this.options.release.getPreviousVersion();
 
-    if (localHash !== remoteHash) {
-      this.logger.info(`Local branch hash is not the same as its remote counterpart`);
-
-      return false;
+      return prevVersion !== nextVersion;
     }
 
-    return true;
+    return false;
   }
 
   protected async getCommands(): Promise<SDK.Command[]> {

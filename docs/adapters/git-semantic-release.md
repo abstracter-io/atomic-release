@@ -175,7 +175,10 @@ semanticRelease.then((release) => {
   release.getVersion().then(console.log);
 
   // Print a set of issues mentiond in the commits to be released
-  // Note: This can be configured by customizing the conventional-changelog preset [parser options](https://git.io/JrWp3).
+  //
+  // Note: To configure how issues are matched within commits logs
+  // create a custom conventional-changelog preset using [parser options](https://git.io/JrWp3)
+  // and make sure to include the preset in semanticRelease options (see the docs for "conventionalChangelogPreset")
   release.getMentionedIssues().then(console.log);
 
   // Print all the previous versions (an array of versions -> ["1.0.1", "0.8.1"], and then their changelogs

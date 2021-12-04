@@ -8,6 +8,7 @@ const github = {
   host: "https://github.com",
 };
 
+const betaBranchName = "beta";
 const stableBranchName = "main";
 
 const createRelease = () => {
@@ -17,7 +18,7 @@ const createRelease = () => {
     workingDirectory: PROJECT_ROOT,
 
     preReleaseBranches: {
-      beta: "beta",
+      beta: betaBranchName,
     },
 
     conventionalChangelogWriterContext: {
@@ -39,6 +40,10 @@ const runStrategy = (release) => {
     release,
 
     remote: "origin",
+
+    isReleaseBranch(branchName) {
+      return branchName === stableBranchName || branchName === betaBranchName;
+    },
 
     changelogFilePath: `${PROJECT_ROOT}/CHANGELOG.md`,
 
@@ -63,7 +68,7 @@ const runStrategy = (release) => {
       },
 
       beta: {
-        npmRegistryDistTag: "beta",
+        npmRegistryDistTag: betaBranchName,
       },
     },
   });
