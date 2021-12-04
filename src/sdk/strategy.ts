@@ -69,22 +69,15 @@ abstract class Strategy<T extends StrategyOptions> {
 
   public async run(): Promise<void> {
     try {
-      const nextVersion = await this.options.release.getNextVersion();
-      const prevVersion = await this.options.release.getPreviousVersion();
+      const shouldRun = await this.shouldRun();
 
-      this.logger.info(`Next version is ${nextVersion}`);
-      this.logger.info(`Previous version is ${prevVersion}`);
-
-      if (prevVersion !== nextVersion) {
-        const shouldRun = await this.shouldRun();
-
-        if (!shouldRun) {
-          this.logger.info("Strategy should not run");
-
-          return;
-        }
-
+      if (shouldRun) {
         const commands = await this.getCommands();
+        const nextVersion = await this.options.release.getNextVersion();
+        const prevVersion = await this.options.release.getPreviousVersion();
+
+        this.logger.info(`Next version is ${nextVersion}`);
+        this.logger.info(`Previous version is ${prevVersion}`);
 
         this.logger.debug(`Executing ${commands.length} commands`);
 
@@ -97,7 +90,7 @@ abstract class Strategy<T extends StrategyOptions> {
         }
         //
         else {
-          throw new Error(`Strategy ${this.getName()} must have at least one command`);
+          this.logger.warn(`Strategy ${this.getName()} has no commands`);
         }
       }
 

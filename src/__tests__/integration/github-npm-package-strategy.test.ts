@@ -32,22 +32,6 @@ class GitClientStub extends GitExecaClient {
   remoteBranchHash = jest.fn();
 }
 
-const gitConventionalReleaseOptions = () => {
-  return {
-    logger: LOGGER,
-    stableBranchName: STABLE_BRANCH_NAME,
-    preReleaseBranches: {
-      [PRE_RELEASE_BRANCH_NAME]: PRE_RELEASE_BRANCH_NAME,
-    },
-    conventionalChangelogWriterContext: {
-      owner: "t",
-      repository: "t",
-      host: "https://github.com",
-      repoUrl: "https://github.com/t/t",
-    },
-  };
-};
-
 const npmStrategyOptions = () => {
   return {
     logger: LOGGER,
@@ -76,6 +60,22 @@ const npmStrategyOptions = () => {
   };
 };
 
+const gitSemanticReleaseOptions = () => {
+  return {
+    logger: LOGGER,
+    stableBranchName: STABLE_BRANCH_NAME,
+    preReleaseBranches: {
+      [PRE_RELEASE_BRANCH_NAME]: PRE_RELEASE_BRANCH_NAME,
+    },
+    conventionalChangelogWriterContext: {
+      owner: "t",
+      repository: "t",
+      host: "https://github.com",
+      repoUrl: "https://github.com/t/t",
+    },
+  };
+};
+
 const commandOptions = (methodName: string) => {
   return async (strategy): Promise<void> => {
     const spy = jest.spyOn(strategy, methodName);
@@ -96,7 +96,7 @@ describe("npm package strategy", () => {
 
     release = await gitSemanticRelease({
       gitClient,
-      ...gitConventionalReleaseOptions(),
+      ...gitSemanticReleaseOptions(),
     });
 
     strategy = new GithubNpmPackageStrategy({
@@ -142,6 +142,26 @@ describe("npm package strategy", () => {
     gitClient.remoteTagHash.mockImplementation(async () => null);
 
     gitClient.remoteBranchHash.mockImplementation(async () => HASH);
+  });
+
+  test("strategy does not execute with no commands", async () => {
+    const executeCommands = jest.fn();
+    const strategy = new GithubNpmPackageStrategy({
+      ...npmStrategyOptions(),
+      release,
+      gitClient,
+    });
+
+    // @ts-expect-error private method can be spied
+    jest.spyOn(strategy, "executeCommands").mockImplementation(executeCommands);
+
+    // @ts-expect-error protected method can be spied
+    jest.spyOn(strategy, "getCommands").mockImplementation(async () => []);
+
+    await strategy.run();
+
+    expect(executeCommands).not.toBeCalled();
+    expect(LOGGER.warn).toBeCalledWith(`Strategy ${strategy.constructor.name} has no commands`);
   });
 
   test("strategy executes commands in specific order", async () => {
@@ -206,13 +226,40 @@ describe("npm package strategy", () => {
 
   test("strategy does not run when version has not changed", async () => {
     // @ts-expect-error protected method can be spied
-    const getCommandsSpy = jest.spyOn(strategy, "getCommands");
+    const shouldRunSpy = jest.spyOn(strategy, "shouldRun");
 
     gitClient.commits.mockImplementation(async () => []);
 
     await strategy.run();
 
-    expect(getCommandsSpy).not.toBeCalled();
+    expect(await shouldRunSpy.mock.results[0].value).toStrictEqual(false);
+  });
+
+  test("strategy does not run when branch is not a release branch", async () => {
+    const isReleaseBranch = jest.fn((_branchName) => false);
+    const strategy = new GithubNpmPackageStrategy({
+      ...npmStrategyOptions(),
+      isReleaseBranch,
+      release,
+      gitClient,
+    });
+
+    // @ts-expect-error protected method can be spied
+    const shouldRunSpy = jest.spyOn(strategy, "shouldRun");
+
+    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+
+    gitClient.remoteBranchHash.mockImplementation(async () => {
+      return "1";
+    });
+
+    await strategy.run();
+
+    expect(isReleaseBranch).toHaveBeenCalledWith(STABLE_BRANCH_NAME);
+
+    expect(await shouldRunSpy.mock.results[0].value).toStrictEqual(false);
+
+    expect(LOGGER.info).toBeCalledWith(`Branch '${STABLE_BRANCH_NAME}' is not a release branch`);
   });
 
   test("strategy does not write changelog when changelog is empty", async () => {

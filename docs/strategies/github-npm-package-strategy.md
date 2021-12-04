@@ -126,6 +126,8 @@ Type: `object literal`
 }
 ```
 
+> :information_source: &nbsp; [GitStrategy](git-strategy.md) options are also applicable.
+
 ### Example
 
 ```js

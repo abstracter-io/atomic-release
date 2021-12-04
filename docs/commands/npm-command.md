@@ -4,7 +4,7 @@ An abstract class with a method to read a package.json.
 
 ### Options
 
-This class accpets the same options as [HttpCommand](http-command.md)
+This class accpets the same options as [ExecaCommand](execa-command.md)
 
 ### Example
 
