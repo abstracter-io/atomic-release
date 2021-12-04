@@ -1,0 +1,74 @@
+# https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions
+# https://docs.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables#default-environment-variables
+# https://discuss.circleci.com/t/conditional-expression-documentation/31227
+
+name: Continous Integration/Deployment
+
+on:
+  push:
+
+env:
+  # This set implicitly by GitHub, but I rather be explicit about it.
+  CI: true
+
+jobs:
+  ci-cd:
+    name: ci-cd
+
+    if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') }}
+
+    runs-on: ubuntu-latest
+
+    env:
+      npm_config_cache: $HOME/.npm
+      npm_cache_key: node-modules-cache
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: true
+
+      - name: Determine Node.js version to use
+        run: echo "::set-output name=version::$(cat .nvmrc)"
+        id: nvm
+
+      # https://github.com/actions/setup-node
+      - name: Setup Node.js ${{ steps.nvm.outputs.version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ steps.nvm.outputs.version }}
+
+      # https://github.com/actions/cache
+      - name: Cache node modules
+        id: cache-node-modules
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.npm_config_cache }}
+          key: ${{ env.npm_cache_key }}-${{ hashFiles('package.json') }}
+          restore-keys: ${{ env.npm_cache_key }}-
+
+      - name: install
+        run: npm install
+
+      - name: lint
+        run: npm run lint
+
+      - name: test
+        run: |
+          npm test
+          npm run test:integration
+
+      - name: build
+        run: npm run build
+
+      - name: fetch git tags
+        run: git fetch --prune --unshallow --tags
+
+      - name: release
+        run: npm run release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_ACTOR: abstracter-bot <bot@abstracter.io>
+          GITHUB_PAT_TOKEN: ${{ secrets.BOT_PAT }}

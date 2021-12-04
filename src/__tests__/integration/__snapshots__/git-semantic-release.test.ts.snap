@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`git semantic release previous release change log is generated 1`] = `
+"## 0.1.0 (2021-10-08)
+
+
+### Features
+
+* ... ([c658ea3](https://github.com/t/t/commit/c658ea3e060490dced90dfb34c018d88b8e797f9))
+
+"
+`;
+
+exports[`git semantic release release change log is generated 1`] = `
+"## 0.2.0 (2021-10-08)
+
+
+### Features
+
+* ... ([c658ea3](https://github.com/t/t/commit/c658ea3e060490dced90dfb34c018d88b8e797f9))
+
+"
+`;
