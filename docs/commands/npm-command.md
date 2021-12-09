@@ -12,8 +12,12 @@ This class accpets the same options as [ExecaCommand](execa-command.md)
 const { NpmCommand } = require("@abstracter/atomic-release/commands");
 
 class ExampleNpmCommand extends NpmCommand {
-   async do() {
+  async do() {
     console.log(await this.getPackageJson());
-   }
+  }
+  
+  async undo() {
+    // ...
+  }
 }
 ```
