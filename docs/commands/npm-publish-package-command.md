@@ -31,7 +31,7 @@ The npm dist-tag to publish to.
 
 Type: `string`  
 
-This is optionl since NPM cli fallbacks to using the publish config section in the package.json.
+This is optionl since NPM CLI fallbacks to using the publish config section in the package.json.
 
 ##### undoPublish
 
