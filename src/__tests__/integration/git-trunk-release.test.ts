@@ -64,9 +64,13 @@ describe("git trunk release", () => {
       return HASH;
     });
 
-    gitClient.commits.mockImplementation(async () => [commit()]);
+    gitClient.commits.mockImplementation(async () => {
+      return [commit()];
+    });
 
-    gitClient.refName.mockImplementation(async () => "main");
+    gitClient.refName.mockImplementation(async () => {
+      return "main";
+    });
 
     release = await gitTrunkRelease({
       gitClient,
@@ -149,7 +153,9 @@ describe("git trunk release", () => {
 
   test("previous version changelog is null", async () => {
     const hash = "10f03409c73ffa37fbd2b890d99c74c63d0f9f03";
-    const changelogCommitFilter = jest.fn(() => false);
+    const changelogCommitFilter = jest.fn(() => {
+      return false;
+    });
     const release = await gitTrunkRelease({
       ...releaseOptions(),
 
@@ -211,11 +217,13 @@ describe("git trunk release", () => {
       rawConventionalCommits,
     });
 
-    rawConventionalCommits.mockImplementation(() => []);
+    rawConventionalCommits.mockImplementation(() => {
+      return [];
+    });
 
     await release.getChangelog();
 
-    expect(rawConventionalCommits).toBeCalledWith(`HEAD -1`);
+    expect(rawConventionalCommits).toBeCalledWith("HEAD -1");
   });
 
   test("generating changelog fails when writer context is missing", async () => {
@@ -224,15 +232,19 @@ describe("git trunk release", () => {
       gitClient,
       conventionalChangelogWriterContext: null as never,
     });
-    const expectedError = new Error(`conventional changelog writer context is missing`);
+    const expectedError = new Error("conventional changelog writer context is missing");
 
-    expect(await release.getChangelog().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getChangelog().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("generating changelog by version fails when version does not exists", async () => {
     const version = "fffferrt";
     const expectedError = new Error(`Could not find commits for version '${version}'`);
 
-    expect(await release.getChangelogByVersion(version).catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getChangelogByVersion(version).catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 });

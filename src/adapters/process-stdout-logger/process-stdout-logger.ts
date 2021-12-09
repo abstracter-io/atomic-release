@@ -28,7 +28,9 @@ const LOG_LEVELS: LogLevel[] = [
 
 const getLogLevel = (logLevelName?: string): LogLevel => {
   const name = logLevelName ?? process.env.ATOMIC_RELEASE_LOG_LEVEL ?? "INFO";
-  const logLevel = LOG_LEVELS.find((level) => level.name === name.toUpperCase());
+  const logLevel = LOG_LEVELS.find((level) => {
+    return level.name === name.toUpperCase();
+  });
 
   if (!logLevel) {
     throw new Error(`Unknown log level '${name}'`);
@@ -47,7 +49,9 @@ const messagePrefix = (name: string, logLevelName: string) => {
   return colors.gray(`[${timestamp}] [atomic-release] [${name}] ${logLevelName} ›`);
 };
 
-const stdout = (message: string) => process.stdout.write(`${message}\n`);
+const stdout = (message: string) => {
+  return process.stdout.write(`${message}\n`);
+};
 
 const processStdoutLogger = (options: LoggerOptions): Logger => {
   const name = options.name;

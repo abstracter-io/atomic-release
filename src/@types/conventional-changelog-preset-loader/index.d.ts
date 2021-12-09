@@ -19,12 +19,12 @@ declare module "conventional-changelog-preset-loader" {
 
   type PresetFactoryCallback = (cb: (_: null, preset: ConventionalChangelogPreset) => void) => void;
 
+  type PresetLoader = PresetFactoryCallback | ConventionalChangelogPreset | Promise<ConventionalChangelogPreset>;
+
   /**
    * https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-preset-loader
    */
-  function presetLoader(
-    presetName: string
-  ): PresetFactoryCallback | ConventionalChangelogPreset | Promise<ConventionalChangelogPreset>;
+  function presetLoader(presetName: string): PresetLoader;
 
   // eslint-disable-next-line import/no-default-export
   export default presetLoader;

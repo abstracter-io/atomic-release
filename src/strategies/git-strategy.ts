@@ -30,7 +30,9 @@ abstract class GitStrategy<T extends GitStrategyOptions> extends SDK.Strategy<T>
       this.gitClient = options.gitClient;
     }
 
-    this.isReleaseBranch = options.isReleaseBranch ?? (() => true);
+    this.isReleaseBranch = options.isReleaseBranch ?? (() => {
+      return true;
+    });
   }
 
   protected async shouldRun(): Promise<boolean> {
@@ -44,7 +46,7 @@ abstract class GitStrategy<T extends GitStrategyOptions> extends SDK.Strategy<T>
       this.logger.info(`Remote branch hash is ${remoteHash}`);
 
       if (localHash !== remoteHash) {
-        this.logger.info(`Local branch hash is not the same as its remote counterpart`);
+        this.logger.info("Local branch hash is not the same as its remote counterpart");
 
         return false;
       }
@@ -52,9 +54,8 @@ abstract class GitStrategy<T extends GitStrategyOptions> extends SDK.Strategy<T>
       return true;
     }
     //
-    else {
-      this.logger.info(`Branch '${branchName}' is not a release branch`);
-    }
+
+    this.logger.info(`Branch '${branchName}' is not a release branch`);
 
     return false;
   }

@@ -89,7 +89,7 @@ describe("github create release command", () => {
 
       headers: {
         ...expected.headers,
-        Accept: V3_MIME_TYPE,
+        "Accept": V3_MIME_TYPE,
         "Content-Type": "application/json",
       },
 
@@ -117,7 +117,7 @@ describe("github create release command", () => {
 
       headers: {
         ...expected.headers,
-        Accept: V3_MIME_TYPE,
+        "Accept": V3_MIME_TYPE,
         "Content-Type": "application/json",
       },
 
@@ -147,7 +147,7 @@ describe("github create release command", () => {
         "X-Custom-Header": "1",
         "Content-Type": expect.any(String),
         "Content-Length": fs.statSync(__filename).size.toString(),
-        Accept: V3_MIME_TYPE,
+        "Accept": V3_MIME_TYPE,
       },
 
       body: expect.any(ReadStream),
@@ -201,7 +201,7 @@ describe("github create release command", () => {
 
     expect(uploads.length).toEqual(1);
 
-    expect(logger.warn).toBeCalledWith(`Duplicate asset will be filtered out`);
+    expect(logger.warn).toBeCalledWith("Duplicate asset will be filtered out");
     expect(logger.warn).toBeCalledWith(`An asset named '${path.basename(__filename)}' already exists`);
   });
 
@@ -261,7 +261,7 @@ describe("github create release command", () => {
 
       headers: {
         ...expected.headers,
-        Accept: "application/vnd.github.v3+json",
+        "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json",
       },
 
@@ -287,7 +287,7 @@ describe("github create release command", () => {
 
       headers: {
         ...expected.headers,
-        Accept: "application/vnd.github.v3+json",
+        "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json",
       },
 

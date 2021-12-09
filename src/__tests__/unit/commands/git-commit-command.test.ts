@@ -35,11 +35,13 @@ describe("perform a git commit", () => {
   });
 
   test("invalid actor throws", async () => {
-    const expectedError = new Error(`actor must follow "name <email>" format`);
+    const expectedError = new Error("actor must follow \"name <email>\" format");
     const commandStub = new GitCommitCommandStub({
-      actor: `...`,
+      actor: "...",
     });
-    const error = await commandStub.do().catch((e) => e);
+    const error = await commandStub.do().catch((e) => {
+      return e;
+    });
 
     expect(error).toStrictEqual(expectedError);
   });

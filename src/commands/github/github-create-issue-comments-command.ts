@@ -68,8 +68,9 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
 
       return null;
     }
+
     //
-    else if (response.status !== 201) {
+    if (response.status !== 201) {
       throw new Error(`Failed to create a comment in issue '${issueNumber}'. Status code is ${response.status}`);
     }
 

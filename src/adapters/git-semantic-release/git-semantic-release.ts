@@ -58,11 +58,10 @@ const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Optio
   const stableBranchName = options.stableBranchName;
   const workingDirectory = options.workingDirectory ?? process.cwd();
   const remote = options.remote ?? "origin";
-  // eslint-disable-next-line prettier/prettier
   const gitClient = options.gitClient ?? new GitExecaClient({
-      remote,
-      workingDirectory,
-    });
+    remote,
+    workingDirectory,
+  });
   const isReleaseCommit = (commit: ConventionalCommit): boolean => {
     const type = commit.type;
 
@@ -76,6 +75,7 @@ const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Optio
 
     return false;
   };
+
   const rawConventionalCommits = async (range: string) => {
     const commits = await gitClient.commits(range);
 
@@ -131,7 +131,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
   // ================
   const getBranchName = () => {
     return memo("branch_name", async () => {
-      return await gitClient.refName("HEAD");
+      return gitClient.refName("HEAD");
     });
   };
 
@@ -182,12 +182,11 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
           return preReleaseId;
         }
         //
-        else {
-          throw new Error(`Could not find pre release id for branch '${branchName}'`);
-        }
+
+        throw new Error(`Could not find pre release id for branch '${branchName}'`);
       }
 
-      throw new Error(`Stable branch name is missing`);
+      throw new Error("Stable branch name is missing");
     });
   };
 
@@ -209,7 +208,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
 
       logger.info(`Retrieving commits ${since ? `since ${since}` : `until ${until}`}`);
 
-      return await Promise.all(parsedCommits);
+      return Promise.all(parsedCommits);
     });
   };
 
@@ -236,13 +235,14 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
 
           /* istanbul ignore if */
           if (j === undefined) {
-            throw new Error(`Can this happen??`);
+            throw new Error("Can this happen??");
           }
 
           for (let l = rawConventionalCommits.length; j < l; j += 1) {
             const commit = rawConventionalCommits[j];
 
             if (!taken.has(commit.hash)) {
+              // eslint-disable-next-line no-await-in-loop
               conventionalCommits.push(await parseCommit(commit.raw));
 
               taken.add(commit.hash);
@@ -262,7 +262,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
       return opt.conventionalChangelogWriterContext;
     }
 
-    throw new Error(`conventional changelog writer context is missing`);
+    throw new Error("conventional changelog writer context is missing");
   };
 
   // Public methods
@@ -271,7 +271,9 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
     return memo("versions", async () => {
       const tags = await getMergedTags();
 
-      return tags.map((tags) => semver.clean(tags.name));
+      return tags.map((tags) => {
+        return semver.clean(tags.name);
+      });
     });
   };
 

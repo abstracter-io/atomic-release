@@ -1,5 +1,5 @@
 declare module "conventional-changelog-writer" {
-  import { ConventionalCommit } from "conventional-commits-parser";
+  import { ConventionalCommit, ConventionalCommitsParserOptions } from "conventional-commits-parser";
 
   // https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-writer#context
   export type ChangelogWriterContext = {
@@ -32,11 +32,11 @@ declare module "conventional-changelog-writer" {
     generateOn?: (commit: ConventionalCommit) => boolean | string;
 
     finalizeContext?: (
-      context: ConventionalChangelogWriterContext,
-      options: ConventionalParserOptions,
+      context: ChangelogWriterContext,
+      options: ConventionalCommitsParserOptions,
       commits: ConventionalCommit[],
       keyCommit: ConventionalCommit
-    ) => ConventionalChangelogWriterContext;
+    ) => ChangelogWriterContext;
 
     debug?: () => void;
 
@@ -59,7 +59,7 @@ declare module "conventional-changelog-writer" {
     partials?: Record<string, string>;
   };
 
-  function writer(context: ChangelogWriterContext, options: ChangelogWriterOptions): any;
+  function writer(context: ChangelogWriterContext, options: ChangelogWriterOptions): never;
 
   // eslint-disable-next-line import/no-default-export,@typescript-eslint/explicit-module-boundary-types
   export default writer;

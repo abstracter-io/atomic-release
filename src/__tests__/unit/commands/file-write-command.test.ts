@@ -42,9 +42,15 @@ describe("managing a file content", () => {
       absoluteFilePath: filePath,
     });
 
-    unlink.mockImplementationOnce(() => Promise.resolve());
-    access.mockImplementationOnce(() => Promise.reject(new Error()));
-    writeFile.mockImplementationOnce(() => Promise.resolve());
+    unlink.mockImplementationOnce(() => {
+      return Promise.resolve();
+    });
+    access.mockImplementationOnce(() => {
+      return Promise.reject(new Error());
+    });
+    writeFile.mockImplementationOnce(() => {
+      return Promise.resolve();
+    });
 
     await fileWriterCommand.do();
     await fileWriterCommand.undo();
@@ -65,11 +71,17 @@ describe("managing a file content", () => {
       absoluteFilePath: PACKAGE_JSON_PATH,
     });
 
-    writeFile.mockImplementation(() => Promise.resolve());
+    writeFile.mockImplementation(() => {
+      return Promise.resolve();
+    });
 
-    access.mockImplementationOnce(() => Promise.resolve());
+    access.mockImplementationOnce(() => {
+      return Promise.resolve();
+    });
 
-    readFile.mockImplementationOnce(() => Promise.resolve(initialContent));
+    readFile.mockImplementationOnce(() => {
+      return Promise.resolve(initialContent);
+    });
 
     await fileWriterCommand.do();
     await fileWriterCommand.undo();
@@ -91,9 +103,13 @@ describe("managing a file content", () => {
       absoluteFilePath: filePath,
     });
 
-    access.mockImplementationOnce(() => Promise.reject(new Error()));
+    access.mockImplementationOnce(() => {
+      return Promise.reject(new Error());
+    });
 
-    writeFile.mockImplementationOnce(() => Promise.resolve());
+    writeFile.mockImplementationOnce(() => {
+      return Promise.resolve();
+    });
 
     await fileWriterCommand.do();
 
@@ -133,9 +149,15 @@ describe("managing a file content", () => {
         mode: testCase.mode as FileWriterCommandOptions["mode"],
       });
 
-      access.mockImplementation(() => Promise.resolve());
-      readFile.mockImplementation(() => Promise.resolve(initialContent));
-      writeFile.mockImplementationOnce(() => Promise.resolve());
+      access.mockImplementation(() => {
+        return Promise.resolve();
+      });
+      readFile.mockImplementation(() => {
+        return Promise.resolve(initialContent);
+      });
+      writeFile.mockImplementationOnce(() => {
+        return Promise.resolve();
+      });
 
       await fileWriterCommand.do();
 

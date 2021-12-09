@@ -86,7 +86,7 @@ class GithubNpmPackageStrategy extends GitStrategy<GithubNpmPackageStrategyOptio
       return branch.npmRegistryDistTag;
     }
 
-    throw new Error(`registry dist tag is missing`);
+    throw new Error("registry dist tag is missing");
   }
 
   protected async tagOptions(): Promise<Commands.GitTagCommandOptions> {

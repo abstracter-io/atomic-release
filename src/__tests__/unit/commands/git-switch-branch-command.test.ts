@@ -84,7 +84,9 @@ describe("switch git branch", () => {
     const commandStub = new GitSwitchBranchCommandStub({
       branchName: undefined,
     });
-    const error = await commandStub.do().catch((e) => e);
+    const error = await commandStub.do().catch((e) => {
+      return e;
+    });
 
     expect(error).toStrictEqual(expectedError);
   });

@@ -10,7 +10,7 @@ module.exports = {
   moduleFileExtensions: ["ts", "js", "json", "node"],
 
   displayName: {
-    name: `Integration Tests`,
+    name: "Integration Tests",
     color: "cyanBright",
   },
 
@@ -21,5 +21,5 @@ module.exports = {
   // collectCoverageFrom: ["**"],
   coveragePathIgnorePatterns: ["__tests__", "\\.d.ts"],
   collectCoverage: process.env.CI !== undefined,
-  coverageDirectory: `build/coverage/integration`,
+  coverageDirectory: "build/coverage/integration",
 };

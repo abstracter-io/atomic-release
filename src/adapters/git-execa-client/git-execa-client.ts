@@ -146,9 +146,8 @@ class GitExecaClient implements GitClient {
       return tags;
     }
     //
-    else {
-      throw new Error(`Git version >= ${minCliVersion} is required. Found ${version}.`);
-    }
+
+    throw new Error(`Git version >= ${minCliVersion} is required. Found ${version}.`);
   }
 
   async remoteTagHash(tagName: string): Promise<string | null> {

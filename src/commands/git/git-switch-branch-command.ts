@@ -28,7 +28,11 @@ class GitSwitchBranchCommand extends ExecaCommand<GitSwitchCommandOptions> {
   private async branchExists(branchName: string) {
     const subprocess = this.execa("git", ["rev-parse", "--verify", `refs/heads/${branchName}`]);
 
-    return subprocess.then(() => true).catch(() => false);
+    return subprocess.then(() => {
+      return true;
+    }).catch(() => {
+      return false;
+    });
   }
 
   private async switch(branchName: string, create: boolean): Promise<void> {
