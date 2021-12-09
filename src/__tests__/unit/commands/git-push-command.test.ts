@@ -89,7 +89,9 @@ describe("perform git push", () => {
       });
     });
 
-    await commandStub.do().catch(() => undefined);
+    await commandStub.do().catch(() => {
+      return undefined;
+    });
     await commandStub.undo();
 
     expect(execute).not.toBeCalledWith("git", ["push", expectedRemote, "--delete", expectedBranchName], {

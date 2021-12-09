@@ -74,13 +74,21 @@ describe("git semantic release", () => {
       ...releaseOptions(),
     });
 
-    gitClient.cliVersion.mockImplementation(async () => "2.7.0");
+    gitClient.cliVersion.mockImplementation(async () => {
+      return "2.7.0";
+    });
 
-    gitClient.refHash.mockImplementation(async () => HASH);
+    gitClient.refHash.mockImplementation(async () => {
+      return HASH;
+    });
 
-    gitClient.commits.mockImplementation(async () => [commit()]);
+    gitClient.commits.mockImplementation(async () => {
+      return [commit()];
+    });
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
     gitClient.mergedTags.mockImplementation(async () => {
       const name = "v0.1.0";
@@ -89,9 +97,13 @@ describe("git semantic release", () => {
       return [{ name, hash }];
     });
 
-    gitClient.remoteTagHash.mockImplementation(async () => null);
+    gitClient.remoteTagHash.mockImplementation(async () => {
+      return null;
+    });
 
-    gitClient.remoteBranchHash.mockImplementation(async () => HASH);
+    gitClient.remoteBranchHash.mockImplementation(async () => {
+      return HASH;
+    });
   });
 
   test("filter non release commits", async () => {
@@ -107,11 +119,13 @@ describe("git semantic release", () => {
       return false;
     });
 
-    gitClient.commits.mockImplementation(async () => [expectedCommit]);
+    gitClient.commits.mockImplementation(async () => {
+      return [expectedCommit];
+    });
 
     await release.getNextVersion();
 
-    expect(LOGGER.info).toBeCalledWith(`Filtered 1 commit`);
+    expect(LOGGER.info).toBeCalledWith("Filtered 1 commit");
     expect(isReleaseCommit).toBeCalledTimes(1);
   });
 
@@ -119,7 +133,9 @@ describe("git semantic release", () => {
     const version = "0.1.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
     gitClient.commits.mockImplementation(async () => {
       return [
@@ -130,22 +146,30 @@ describe("git semantic release", () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => [previousTag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [previousTag];
+    });
 
     expect(await release.getNextVersion()).toStrictEqual("0.1.1");
 
-    expect(LOGGER.info).toBeCalledWith(`Found 1 new commits`);
+    expect(LOGGER.info).toBeCalledWith("Found 1 new commits");
   });
 
   test("next version minor is bumped", async () => {
     const version = "0.1.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
-    gitClient.commits.mockImplementation(async () => [commit()]);
+    gitClient.commits.mockImplementation(async () => {
+      return [commit()];
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => [previousTag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [previousTag];
+    });
 
     expect(await release.getNextVersion()).toStrictEqual("0.2.0");
   });
@@ -154,7 +178,9 @@ describe("git semantic release", () => {
     const version = "0.1.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
     gitClient.commits.mockImplementation(async () => {
       return [
@@ -165,7 +191,9 @@ describe("git semantic release", () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => [previousTag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [previousTag];
+    });
 
     expect(await release.getNextVersion()).toStrictEqual("1.0.0");
   });
@@ -174,7 +202,9 @@ describe("git semantic release", () => {
     const version = "0.1.0";
     const tag = { name: `v${version}`, hash: HASH };
 
-    gitClient.mergedTags.mockImplementation(async () => [tag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [tag];
+    });
 
     expect(await release.getVersions()).toStrictEqual([version]);
     expect(gitClient.mergedTags).toBeCalledWith("HEAD");
@@ -225,7 +255,9 @@ describe("git semantic release", () => {
     const version = "0.1.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
     gitClient.commits.mockImplementation(async () => {
       return [
@@ -237,7 +269,9 @@ describe("git semantic release", () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => [previousTag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [previousTag];
+    });
 
     expect(await release.getMentionedIssues()).toStrictEqual(new Set(["3", "39", "46", "999"]));
   });
@@ -245,7 +279,9 @@ describe("git semantic release", () => {
   test("previous version is latest stable", async () => {
     const expectedVersion = "2.0.0";
 
-    gitClient.refName.mockImplementation(async () => PRE_RELEASE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return PRE_RELEASE_BRANCH_NAME;
+    });
 
     gitClient.mergedTags.mockImplementation(async () => {
       return [{ name: `v${expectedVersion}`, hash: HASH }];
@@ -258,7 +294,9 @@ describe("git semantic release", () => {
     const version = "0.1.0-beta.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => PRE_RELEASE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return PRE_RELEASE_BRANCH_NAME;
+    });
 
     gitClient.commits.mockImplementation(async () => {
       return [
@@ -269,15 +307,19 @@ describe("git semantic release", () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => [previousTag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [previousTag];
+    });
 
     expect(await release.getNextVersion()).toStrictEqual("0.1.0-beta.1");
   });
 
   test("non semantic tag names are filtered", async () => {
-    const tag = { name: `v2.0`, hash: HASH };
+    const tag = { name: "v2.0", hash: HASH };
 
-    gitClient.mergedTags.mockImplementation(async () => [tag]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [tag];
+    });
 
     expect(await release.getVersions()).toHaveLength(0);
     expect(LOGGER.debug).toBeCalledWith(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
@@ -302,27 +344,35 @@ describe("git semantic release", () => {
       initialVersion,
     });
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => []);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [];
+    });
 
     expect(await release.getPreviousVersion()).toStrictEqual(initialVersion);
 
     expect(LOGGER.info).toBeCalledWith(
-      `Could not find a previous version. Will use ${initialVersion} as initial version`
+      `Could not find a previous version. Will use ${initialVersion} as initial version`,
     );
   });
 
   test("previous version is the highest released version", async () => {
     const tags = [
-      { name: `v0.1.0`, hash: HASH },
-      { name: `v0.2.0`, hash: HASH },
-      { name: `v0.3.0`, hash: HASH },
+      { name: "v0.1.0", hash: HASH },
+      { name: "v0.2.0", hash: HASH },
+      { name: "v0.3.0", hash: HASH },
     ];
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => tags);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return tags;
+    });
 
     expect(await release.getPreviousVersion()).toStrictEqual("0.3.0");
   });
@@ -337,7 +387,9 @@ describe("git semantic release", () => {
       rawConventionalCommits,
     });
 
-    rawConventionalCommits.mockImplementation(() => []);
+    rawConventionalCommits.mockImplementation(() => {
+      return [];
+    });
 
     await release.getNextVersion();
 
@@ -354,9 +406,13 @@ describe("git semantic release", () => {
       rawConventionalCommits,
     });
 
-    rawConventionalCommits.mockImplementation(() => []);
+    rawConventionalCommits.mockImplementation(() => {
+      return [];
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => []);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [];
+    });
 
     await release.getNextVersion();
 
@@ -367,15 +423,19 @@ describe("git semantic release", () => {
     const stableTag = { name: "v0.1.0", hash: HASH };
     const preReleaseTag = { name: `v0.1.1-${PRE_RELEASE_BRANCH_NAME}.0`, hash: HASH };
 
-    gitClient.refName.mockImplementation(async () => PRE_RELEASE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return PRE_RELEASE_BRANCH_NAME;
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => [
-      preReleaseTag,
-      stableTag,
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [
+        preReleaseTag,
+        stableTag,
 
-      // This is a tag of another branch, it should not be included
-      { name: `v0.1.1-next.0`, hash: HASH },
-    ]);
+        // This is a tag of another branch, it should not be included
+        { name: "v0.1.1-next.0", hash: HASH },
+      ];
+    });
 
     expect(await release.getVersions()).toStrictEqual([
       // fp
@@ -390,9 +450,11 @@ describe("git semantic release", () => {
       gitClient,
       stableBranchName: undefined as never,
     });
-    const expectedError = new Error(`Stable branch name is missing`);
+    const expectedError = new Error("Stable branch name is missing");
 
-    expect(await release.getNextVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getNextVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("previous version fails when initial version is invalid", async () => {
@@ -403,11 +465,17 @@ describe("git semantic release", () => {
       initialVersion,
     });
     const expectedError = new Error(`${initialVersion} is not a semantic version`);
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
-    gitClient.mergedTags.mockImplementation(async () => []);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [];
+    });
 
-    expect(await release.getPreviousVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getPreviousVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("generating changelog fails when writer context is missing", async () => {
@@ -416,24 +484,32 @@ describe("git semantic release", () => {
       gitClient,
       conventionalChangelogWriterContext: null as never,
     });
-    const expectedError = new Error(`conventional changelog writer context is missing`);
+    const expectedError = new Error("conventional changelog writer context is missing");
 
-    expect(await release.getChangelog().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getChangelog().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("next version fails when a tag with the same version exists", async () => {
     const nextVersion = "1.1.0";
-    const tag = { name: `v1.0.0`, hash: HASH };
+    const tag = { name: "v1.0.0", hash: HASH };
     const release = await gitSemanticRelease({
       ...releaseOptions(),
       gitClient,
     });
     const expectedError = new Error(`A tag for version '${nextVersion}' already exists (tag hash: ${tag.hash})`);
 
-    gitClient.mergedTags.mockImplementation(async () => [tag]);
-    gitClient.remoteTagHash.mockImplementation(async () => tag.hash);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [tag];
+    });
+    gitClient.remoteTagHash.mockImplementation(async () => {
+      return tag.hash;
+    });
 
-    expect(await release.getNextVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getNextVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
 
     expect(LOGGER.warn).toBeCalledWith(`Version ${nextVersion} was already released. (tag: v${nextVersion})`);
 
@@ -451,7 +527,9 @@ describe("git semantic release", () => {
     ];
     const expectedVersions = ["1.0.1", "1.0.1", "1.1.0", "1.1.0", "1.0.0"];
 
-    gitClient.mergedTags.mockImplementation(async () => [{ name: `v${version}`, hash: HASH }]);
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [{ name: `v${version}`, hash: HASH }];
+    });
 
     for (const commit of commits) {
       const release = await gitSemanticRelease({
@@ -459,7 +537,9 @@ describe("git semantic release", () => {
         ...releaseOptions(),
       });
 
-      gitClient.commits.mockImplementation(async () => [commit]);
+      gitClient.commits.mockImplementation(async () => {
+        return [commit];
+      });
 
       expect(await release.getNextVersion()).toStrictEqual(expectedVersions.shift());
     }
@@ -469,7 +549,9 @@ describe("git semantic release", () => {
     const version = "1.1.1";
     const expectedError = new Error(`Could not find version ${version} conventional commits`);
 
-    expect(await release.getChangelogByVersion(version).catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getChangelogByVersion(version).catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("default release commits filter throws when commit is missing type", async () => {
@@ -484,7 +566,9 @@ describe("git semantic release", () => {
       return conventionalCommit;
     });
 
-    expect(await release.getNextVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getNextVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("next version fails when pre release branch is missing pre release id", async () => {
@@ -496,14 +580,18 @@ describe("git semantic release", () => {
     const branchName = PRE_RELEASE_BRANCH_NAME;
     const expectedError = new Error(`Could not find pre release id for branch '${branchName}'`);
 
-    gitClient.refName.mockImplementation(async () => branchName);
+    gitClient.refName.mockImplementation(async () => {
+      return branchName;
+    });
 
-    expect(await release.getNextVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getNextVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 
   test("default 'isReleaseCommit' throws when commit does not have 'type' property", async () => {
     const preset = await conventionalChangelogPreset();
-    const expectedError = new Error(`Non supported conventional commit. Provide a custom filter.`);
+    const expectedError = new Error("Non supported conventional commit. Provide a custom filter.");
 
     preset.parserOpts.headerCorrespondence = ["b", "c", "d"];
 
@@ -513,6 +601,8 @@ describe("git semantic release", () => {
       ...releaseOptions(),
     });
 
-    expect(await release.getNextVersion().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await release.getNextVersion().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
   });
 });

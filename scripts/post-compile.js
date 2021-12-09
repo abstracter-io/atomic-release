@@ -4,14 +4,17 @@ const { PACKAGE_ROOT, PROJECT_ROOT } = require("./constants");
 
 const copyFile = (src, dest) => {
   return fs.promises.copyFile(src, dest).then(() => {
-    console.log(`Copied from ${src} to ${dest}`);
+    return console.log(`Copied from ${src} to ${dest}`);
   });
 };
 
 const recursiveDirCopy = (src, dest) => {
   const copy = (src, dest) => {
-    return fs.promises.mkdir(dest, { recursive: true }).then(() => {
-      return fs.promises.readdir(src, { withFileTypes: true }).then((entries) => {
+    return fs.promises.mkdir(dest, { recursive: true })
+      .then(() => {
+        return fs.promises.readdir(src, { withFileTypes: true });
+      })
+      .then((entries) => {
         const promises = [];
 
         for (const entry of entries) {
@@ -29,11 +32,10 @@ const recursiveDirCopy = (src, dest) => {
 
         return Promise.all(promises);
       });
-    });
   };
 
   return copy(src, dest).then(() => {
-    console.log(`Copied from ${src} to ${dest}`);
+    return console.log(`Copied from ${src} to ${dest}`);
   });
 };
 
@@ -46,16 +48,17 @@ const copyFiles = () => {
   ]);
 };
 
-const writeNpmrc = () => {
+const writeNpmConfig = () => {
   const path = `${PACKAGE_ROOT}/.npmrc`;
-  const content = `//registry.npmjs.org/:_authToken=\${NPM_TOKEN}`;
+  // eslint-disable-next-line no-template-curly-in-string
+  const content = "//registry.npmjs.org/:_authToken=${NPM_TOKEN}";
 
   return fs.promises.writeFile(path, content).then(() => {
-    console.log(`Wrote ${path}`);
+    return console.log(`Wrote ${path}`);
   });
 };
 
-writeNpmrc()
+writeNpmConfig()
   .then(copyFiles)
   .catch((e) => {
     process.exitCode = 1;

@@ -27,7 +27,7 @@ describe("git execa client", () => {
   test("log", async () => {
     const range = "123..";
     const format = "%s";
-    const delimiter = `:++:`;
+    const delimiter = ":++:";
 
     execute.mockImplementation((..._args) => {
       return Promise.resolve({
@@ -70,7 +70,9 @@ describe("git execa client", () => {
         commit.subject,
         commit.body,
         commit.notes,
-        commit.tags.map((tag) => `tag: ${tag}`).join(", "),
+        commit.tags.map((tag) => {
+          return `tag: ${tag}`;
+        }).join(", "),
         commit.committedTimestamp / 1000,
         commit.author.name,
         commit.author.email,
@@ -90,7 +92,7 @@ describe("git execa client", () => {
       ["log", expectedRange, `--pretty=format:${expectedFormat.join(delimiter)}:++:`],
       {
         cwd: expected.workingDirectory,
-      }
+      },
     );
   });
 
@@ -154,7 +156,7 @@ describe("git execa client", () => {
 
     execute.mockImplementationOnce(() => {
       return Promise.resolve({
-        stdout: `git version 2.7.0`,
+        stdout: "git version 2.7.0",
       });
     });
 
@@ -171,7 +173,7 @@ describe("git execa client", () => {
       ["tag", `--merged=${expectedRef}`, `--format=%(refname:strip=2)${delimiter}%(objectname)`],
       {
         cwd: expected.workingDirectory,
-      }
+      },
     );
   });
 
@@ -230,16 +232,19 @@ describe("git execa client", () => {
   });
 
   test("merged tags throws when cli version < 2.7.0", async () => {
-    const expectedVersion = "2.6.0";
+    const cliVersion = "2.6.0";
+    const expectedError = new Error(`Git version >= 2.7.0 is required. Found ${cliVersion}.`);
 
     execute.mockImplementation(() => {
       return Promise.resolve({
-        stdout: `git version ${expectedVersion}`,
+        stdout: `git version ${cliVersion}`,
       });
     });
 
-    expect(await gitClient.mergedTags("HEAD").catch((e) => e)).toEqual(
-      new Error(`Git version >= 2.7.0 is required. Found ${expectedVersion}.`)
-    );
+    const error = await gitClient.mergedTags("HEAD").catch((e) => {
+      return e;
+    });
+
+    expect(error).toEqual(expectedError);
   });
 });

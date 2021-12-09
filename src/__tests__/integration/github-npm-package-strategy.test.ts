@@ -82,7 +82,7 @@ const commandOptions = (methodName: string) => {
 
     await strategy.getCommands();
 
-    return await spy.mock.results[0].value;
+    return spy.mock.results[0].value;
   };
 };
 
@@ -105,9 +105,13 @@ describe("npm package strategy", () => {
       ...npmStrategyOptions(),
     });
 
-    gitClient.cliVersion.mockImplementation(async () => "2.7.0");
+    gitClient.cliVersion.mockImplementation(async () => {
+      return "2.7.0";
+    });
 
-    gitClient.refHash.mockImplementation(async () => HASH);
+    gitClient.refHash.mockImplementation(async () => {
+      return HASH;
+    });
 
     gitClient.commits.mockImplementation(async () => {
       return [
@@ -130,7 +134,9 @@ describe("npm package strategy", () => {
       ];
     });
 
-    gitClient.refName.mockImplementation(async () => PRE_RELEASE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return PRE_RELEASE_BRANCH_NAME;
+    });
 
     gitClient.mergedTags.mockImplementation(async () => {
       const name = "v0.1.0";
@@ -139,9 +145,13 @@ describe("npm package strategy", () => {
       return [{ name, hash }];
     });
 
-    gitClient.remoteTagHash.mockImplementation(async () => null);
+    gitClient.remoteTagHash.mockImplementation(async () => {
+      return null;
+    });
 
-    gitClient.remoteBranchHash.mockImplementation(async () => HASH);
+    gitClient.remoteBranchHash.mockImplementation(async () => {
+      return HASH;
+    });
   });
 
   test("strategy does not execute with no commands", async () => {
@@ -156,7 +166,9 @@ describe("npm package strategy", () => {
     jest.spyOn(strategy, "executeCommands").mockImplementation(executeCommands);
 
     // @ts-expect-error protected method can be spied
-    jest.spyOn(strategy, "getCommands").mockImplementation(async () => []);
+    jest.spyOn(strategy, "getCommands").mockImplementation(async () => {
+      return [];
+    });
 
     await strategy.run();
 
@@ -219,7 +231,9 @@ describe("npm package strategy", () => {
       ];
     });
 
-    expect(await strategy.run().catch((e) => e)).toStrictEqual(expectedError);
+    expect(await strategy.run().catch((e) => {
+      return e;
+    })).toStrictEqual(expectedError);
 
     expect(process.exitCode).toStrictEqual(1);
   });
@@ -228,7 +242,9 @@ describe("npm package strategy", () => {
     // @ts-expect-error protected method can be spied
     const shouldRunSpy = jest.spyOn(strategy, "shouldRun");
 
-    gitClient.commits.mockImplementation(async () => []);
+    gitClient.commits.mockImplementation(async () => {
+      return [];
+    });
 
     await strategy.run();
 
@@ -236,7 +252,9 @@ describe("npm package strategy", () => {
   });
 
   test("strategy does not run when branch is not a release branch", async () => {
-    const isReleaseBranch = jest.fn((_branchName) => false);
+    const isReleaseBranch = jest.fn((_branchName) => {
+      return false;
+    });
     const strategy = new GithubNpmPackageStrategy({
       ...npmStrategyOptions(),
       isReleaseBranch,
@@ -247,7 +265,9 @@ describe("npm package strategy", () => {
     // @ts-expect-error protected method can be spied
     const shouldRunSpy = jest.spyOn(strategy, "shouldRun");
 
-    gitClient.refName.mockImplementation(async () => STABLE_BRANCH_NAME);
+    gitClient.refName.mockImplementation(async () => {
+      return STABLE_BRANCH_NAME;
+    });
 
     gitClient.remoteBranchHash.mockImplementation(async () => {
       return "1";
@@ -265,8 +285,12 @@ describe("npm package strategy", () => {
   test("strategy does not write changelog when changelog is empty", async () => {
     const executeCommands = jest.fn();
 
-    jest.spyOn(release, "getChangelog").mockImplementationOnce(async () => null);
-    jest.spyOn(release, "getChangelogByVersion").mockImplementationOnce(async () => null);
+    jest.spyOn(release, "getChangelog").mockImplementationOnce(async () => {
+      return null;
+    });
+    jest.spyOn(release, "getChangelogByVersion").mockImplementationOnce(async () => {
+      return null;
+    });
 
     // @ts-expect-error protected method can be spied
     jest.spyOn(strategy, "executeCommands").mockImplementation(executeCommands);
@@ -304,7 +328,7 @@ describe("npm package strategy", () => {
     await strategy.run();
 
     expect(getCommandsSpy).not.toBeCalled();
-    expect(LOGGER.info).toBeCalledWith(`Local branch hash is not the same as its remote counterpart`);
+    expect(LOGGER.info).toBeCalledWith("Local branch hash is not the same as its remote counterpart");
   });
 
   describe("tag command options", () => {
@@ -517,8 +541,12 @@ describe("npm package strategy", () => {
     });
 
     test("changelog options is null when changelog is empty", async () => {
-      jest.spyOn(release, "getChangelog").mockImplementationOnce(async () => null);
-      jest.spyOn(release, "getChangelogByVersion").mockImplementationOnce(async () => null);
+      jest.spyOn(release, "getChangelog").mockImplementationOnce(async () => {
+        return null;
+      });
+      jest.spyOn(release, "getChangelogByVersion").mockImplementationOnce(async () => {
+        return null;
+      });
 
       expect(await getCommandOptions(strategy)).toStrictEqual(null);
     });

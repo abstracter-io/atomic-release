@@ -1,6 +1,7 @@
 import fs from "fs";
 
 import { Command, CommandOptions } from "../";
+import to from "await-to-js";
 
 type FileWriterCommandOptions = CommandOptions & {
   content: string;
@@ -41,19 +42,16 @@ class FileWriterCommand extends Command<FileWriterCommandOptions> {
 
     this.logger.debug(`Reading file ${absoluteFilePath}`);
 
-    return await fs.promises.readFile(absoluteFilePath, {
+    return fs.promises.readFile(absoluteFilePath, {
       encoding: "utf-8",
       flag: "r",
     });
   }
 
   protected async filePathExists(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const t = () => resolve(true);
-      const f = () => resolve(false);
+    const [error] = await to(fs.promises.access(this.options.absoluteFilePath, fs.constants.F_OK));
 
-      fs.promises.access(this.options.absoluteFilePath, fs.constants.F_OK).then(t, f);
-    });
+    return error === null;
   }
 
   protected async writeFileContent(content: string): Promise<void> {

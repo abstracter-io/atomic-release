@@ -32,6 +32,7 @@ abstract class Strategy<T extends StrategyOptions> {
 
       logger.debug(`Executing command '${commandName}'`);
 
+      // eslint-disable-next-line no-await-in-loop
       const [error] = await to(command.do());
 
       logger.debug(`Executing command '${commandName}' completed in ${executeTimer}`);
@@ -43,6 +44,7 @@ abstract class Strategy<T extends StrategyOptions> {
 
         while (i !== -1) {
           const command = atomicCommands[i];
+          // eslint-disable-next-line no-await-in-loop
           const [undoError] = await to(command.undo());
 
           if (undoError) {
@@ -95,7 +97,8 @@ abstract class Strategy<T extends StrategyOptions> {
       }
 
       this.logger.info("All done...");
-    } catch (e) {
+    }
+    catch (e) {
       process.exitCode = 1;
 
       throw e;

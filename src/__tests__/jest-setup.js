@@ -1,3 +1,4 @@
+// eslint-disable-next-line node/no-unpublished-require
 const { default: matchers } = require("expect/build/matchers");
 
 const parseJSON = (str) => {

@@ -38,11 +38,11 @@ describe("comment in github issues", () => {
 
   const URL_TEMPLATES = {
     CREATE_COMMENT: uriTemplates(
-      `https://api.github.com/repos/${expected.owner}/${expected.repo}/issues/{issueNumber}/comments`
+      `https://api.github.com/repos/${expected.owner}/${expected.repo}/issues/{issueNumber}/comments`,
     ),
 
     CREATED_COMMENT_HTML: uriTemplates(
-      `https://github.com/${expected.owner}/${expected.repo}/pull/{issueNumber}#issuecomment-${CREATED_COMMENT_ID}`
+      `https://github.com/${expected.owner}/${expected.repo}/pull/{issueNumber}#issuecomment-${CREATED_COMMENT_ID}`,
     ),
 
     // Cutting corners... not really a template
@@ -92,7 +92,7 @@ describe("comment in github issues", () => {
         headers: {
           ...expected.headers,
           "Content-Type": "application/json",
-          Accept: V3_MIME_TYPE,
+          "Accept": V3_MIME_TYPE,
         },
 
         body: expect.jsonMatching({
@@ -163,7 +163,7 @@ describe("comment in github issues", () => {
     const resourceURL = URL_TEMPLATES.CREATED_COMMENT_HTML.fill({ issueNumber });
 
     expect(logger.warn).toBeCalledWith(
-      `Failed to delete comment '${resourceURL}'. Status code is ${expectedStatus.status}`
+      `Failed to delete comment '${resourceURL}'. Status code is ${expectedStatus.status}`,
     );
   });
 
@@ -210,7 +210,7 @@ describe("comment in github issues", () => {
     const [error] = await to(commandStub.do());
 
     expect(error).toEqual(
-      new Error(`Failed to create a comment in issue '${issueNumber}'. Status code is ${statusCode}`)
+      new Error(`Failed to create a comment in issue '${issueNumber}'. Status code is ${statusCode}`),
     );
   });
 });

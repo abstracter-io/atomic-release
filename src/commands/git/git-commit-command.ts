@@ -35,7 +35,7 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
       const { name, email } = parseAuthor(this.options.actor);
 
       if (!name || !email) {
-        throw new Error(`actor must follow "name <email>" format`);
+        throw new Error("actor must follow \"name <email>\" format");
       }
 
       Object.assign(commitEnvVars, {

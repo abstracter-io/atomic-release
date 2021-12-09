@@ -81,7 +81,7 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
 
       if (previousAsset) {
         this.logger.warn(`An asset named '${name}' already exists`);
-        this.logger.warn(`Duplicate asset will be filtered out`);
+        this.logger.warn("Duplicate asset will be filtered out");
       }
       //
       else {

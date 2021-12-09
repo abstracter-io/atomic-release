@@ -34,11 +34,10 @@ type Options = Required<GitTrunkReleaseOptions>;
 const defaultOptions = async (options: GitTrunkReleaseOptions): Promise<Options> => {
   const workingDirectory = options.workingDirectory ?? process.cwd();
   const remote = options.remote ?? "origin";
-  // eslint-disable-next-line prettier/prettier
   const gitClient = options.gitClient ?? new GitExecaClient({
-      remote,
-      workingDirectory,
-    });
+    remote,
+    workingDirectory,
+  });
   const rawConventionalCommits = async (range: string) => {
     const commits = await gitClient.commits(range);
 
@@ -67,6 +66,7 @@ const defaultOptions = async (options: GitTrunkReleaseOptions): Promise<Options>
       };
     });
   };
+
   const changelogCommitFilter = (_commit: ConventionalCommit): boolean => {
     return true;
   };
@@ -102,7 +102,7 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
       return opt.conventionalChangelogWriterContext;
     }
 
-    throw new Error(`conventional changelog writer context is missing`);
+    throw new Error("conventional changelog writer context is missing");
   };
 
   const getConventionalCommits = async (): Promise<ConventionalCommit[]> => {
@@ -121,15 +121,15 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
       const commits = await gitClient.commits("HEAD");
       const versionsConventionalCommits = {};
 
-      // remove the first commit 'HEAD'
+      // remove the first ('HEAD') commit
       commits.shift();
 
-      for (const commit of commits) {
+      await Promise.all(commits.map(async (commit) => {
         const [rawConventionalCommit] = await opt.rawConventionalCommits(`${commit.hash} -1`);
         const commits = [parseCommit(rawConventionalCommit.raw)];
 
         versionsConventionalCommits[commit.hash.slice(0, 7)] = commits.filter(opt.changelogCommitFilter);
-      }
+      }));
 
       return versionsConventionalCommits;
     });
@@ -143,7 +143,9 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
 
       commits.shift();
 
-      return commits.map((commit) => commit.hash.slice(0, 7));
+      return commits.map((commit) => {
+        return commit.hash.slice(0, 7);
+      });
     });
   };
 

@@ -44,6 +44,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@abstracter/eslint-config": "^0.1.1",
     "@commitlint/cli": "^9.1.1",
     "@commitlint/config-conventional": "^9.1.1",
     "@types/jest": "^27.0.2",
@@ -60,7 +61,6 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-jest": "^25.2.2",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-standard": "^5.0.0",
     "expect": "^27.3.0",
@@ -70,8 +70,6 @@
     "lint-staged": "^11.2.1",
     "micromatch": "^4.0.4",
     "npm-check": "^5.9.2",
-    "prettier": "^2.4.1",
-    "standard": "^16.0.4",
     "ts-jest": "^27.0.5",
     "typescript": "^4.4.3"
   },
@@ -83,6 +81,7 @@
     "conventional-commits-parser": "^3.2.2",
     "execa": "^4.0.3",
     "fetch-defaults": "^1.0.0",
+    "get-stream": "^5.2.0",
     "into-stream": "^6.0.0",
     "mime": "^2.5.2",
     "node-fetch": "^2.6.2",
