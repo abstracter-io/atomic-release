@@ -17,7 +17,7 @@ Type: `string`
 Type: `string`  
 Default: `INFO`
 
-The loglevel value may be one of the following: "ERROR", "WARN", "INFO" or "DEBUG"
+The log level value may be one of the following: "ERROR", "WARN", "INFO" or "DEBUG"
 
 > NOTE: The log level may also be configured using 'ATOMIC_RELEASE_LOG_LEVEL' environment variable.
 
