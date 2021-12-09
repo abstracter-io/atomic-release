@@ -113,7 +113,7 @@ const rawConventionalCommits = async (range) => {
 Type: `function`
 
 A callback that accepts a "conventional commit", and returns a boolean.
-When `true` is returned, the commit will not be taken into account when computing the next version.
+When `false` is returned, the commit will **not** be taken into account when computing the next version.
 
 The default callback is:
 
