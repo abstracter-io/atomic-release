@@ -2,7 +2,6 @@
 
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-blue.svg)](http://commitizen.github.io/cz-cli/)
 [![js-standard-style](https://img.shields.io/badge/code_style-standard-blue.svg?style=flat)](https://github.com/feross/standard)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-blue.svg?style=flat)](https://github.com/prettier/prettier)
 [![npm latest version](https://img.shields.io/npm/v/@abstracter/atomic-release/latest.svg?color=009688)](https://www.npmjs.com/package/@abstracter/atomic-release)
 
 Atomic Release is an SDK to help automate your release process and "undo" steps taken when a release fails.
