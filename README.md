@@ -4,7 +4,7 @@
 [![js-standard-style](https://img.shields.io/badge/code_style-standard-blue.svg?style=flat)](https://github.com/feross/standard)
 [![npm latest version](https://img.shields.io/npm/v/@abstracter/atomic-release/latest.svg?color=009688)](https://www.npmjs.com/package/@abstracter/atomic-release)
 
-Atomic Release is an SDK to help automate your release process and "undo" steps taken when a release fails.
+Atomic Release is an SDK to help automate a software release process with the ability to "undo" steps taken when a release process fails.
 
 ## Highlights
 
