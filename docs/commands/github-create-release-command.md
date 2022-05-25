@@ -1,4 +1,4 @@
-# GithubCreateIssueCommentsCommand
+# GithubCreateReleaseCommand
 
 A github command that creates a github release.
 
@@ -46,7 +46,7 @@ An array of object literals where each object is an asset to upload to the relea
 ### Example
 
 ```js
-const { GithubCreateIssueCommentsCommand } = require("@abstracter/atomic-release/commands");
+const { GithubCreateReleaseCommand } = require("@abstracter/atomic-release/commands");
 
 const command = new GithubCreateReleaseCommand({
   owner: "abstracter-io",
