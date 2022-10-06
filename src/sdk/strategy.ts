@@ -59,6 +59,12 @@ abstract class Strategy<T extends StrategyOptions> {
         throw error;
       }
     }
+
+    await Promise.all(atomicCommands.map((command) => {
+      return command.cleanup().catch(e => {
+        logger.warn(e);
+      });
+    }));
   }
 
   protected abstract shouldRun(): Promise<boolean>;

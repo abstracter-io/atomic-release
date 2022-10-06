@@ -21,7 +21,13 @@ abstract class Command<T extends CommandOptions = CommandOptions> {
 
   public abstract do(): Promise<void>;
 
-  public abstract undo(): Promise<void>;
+  public undo(): Promise<void> {
+    return Promise.resolve(undefined);
+  };
+
+  public cleanup(): Promise<void> {
+    return Promise.resolve(undefined);
+  };
 }
 
 export { Command, CommandOptions };
