@@ -96,10 +96,12 @@ abstract class Strategy<T extends StrategyOptions> {
         }
       }
 
-      this.logger.info("All done...");
+      this.logger.info("Release succeeded");
     }
     catch (e) {
       process.exitCode = 1;
+
+      this.logger.error("Release failed");
 
       throw e;
     }
