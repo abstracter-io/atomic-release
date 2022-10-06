@@ -1,19 +1,15 @@
-## 1.1.0 (2021-11-26)
+### 1.2.1-beta.0 (2022-10-06)
+
+
+### Bug Fixes
+
+* **trunk-release:** use 'HEAD' implicitly ([87d1261](https://github.com/abstracter-io/atomic-release/commit/87d1261e9eb842c1a4745b59b32810e2afcdad6d))
+
+
+## 1.2.0 (2022-10-06)
 
 
 ### Features
 
-* add release implementation for trunk based development ([23f4a31](https://github.com/abstracter-io/atomic-release/commit/23f4a31383f0fd4e3e88132149dfb55629b4da12))
-
-
-## 1.0.0 (2021-11-26)
-
-
-### ⚠ BREAKING CHANGES
-
-* initial version
-
-### Features
-
-* initial version ([35015c5](https://github.com/abstracter-io/atomic-release/commit/35015c5c6cde18050139a6f5db5a8062fb993fb1))
+* version 1.2.0 ([058cebd](https://github.com/abstracter-io/atomic-release/commit/058cebd161eaa09f624695e0483b398681109d4c))
 
