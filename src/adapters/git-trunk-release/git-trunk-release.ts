@@ -107,7 +107,7 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
 
   const getConventionalCommits = async (): Promise<ConventionalCommit[]> => {
     return memo("conventional_commits", async () => {
-      const commits = await opt.rawConventionalCommits("HEAD -1");
+      const commits = await opt.rawConventionalCommits("-1");
       const parsedCommits = commits.map((commit) => {
         return parseCommit(commit.raw);
       });
