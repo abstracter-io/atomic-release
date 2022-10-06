@@ -59,12 +59,6 @@ abstract class Strategy<T extends StrategyOptions> {
         throw error;
       }
     }
-
-    await Promise.all(atomicCommands.map((command) => {
-      return command.cleanup().catch(e => {
-        logger.warn(e);
-      });
-    }));
   }
 
   protected abstract shouldRun(): Promise<boolean>;
@@ -92,7 +86,17 @@ abstract class Strategy<T extends StrategyOptions> {
         if (commands.length) {
           const executionTimer = timer();
 
+          this.logger.info("Executing commands...");
+
           await this.executeCommands(commands);
+
+          this.logger.info("Cleaning up...");
+
+          await Promise.all(commands.map((command) => {
+            return command.cleanup().catch(e => {
+              this.logger.warn(e);
+            });
+          }));
 
           this.logger.info(`Execution completed in ~${executionTimer}`);
         }
@@ -102,7 +106,7 @@ abstract class Strategy<T extends StrategyOptions> {
         }
       }
 
-      this.logger.info("Release succeeded");
+      this.logger.info("All done...");
     }
     catch (e) {
       process.exitCode = 1;
