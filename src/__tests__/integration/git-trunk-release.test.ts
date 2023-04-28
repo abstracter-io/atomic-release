@@ -223,7 +223,7 @@ describe("git trunk release", () => {
 
     await release.getChangelog();
 
-    expect(rawConventionalCommits).toBeCalledWith("HEAD -1");
+    expect(rawConventionalCommits).toBeCalledWith("-1");
   });
 
   test("generating changelog fails when writer context is missing", async () => {

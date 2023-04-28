@@ -35,7 +35,7 @@ abstract class Strategy<T extends StrategyOptions> {
       // eslint-disable-next-line no-await-in-loop
       const [error] = await to(command.do());
 
-      logger.debug(`Executing command '${commandName}' completed in ${executeTimer}`);
+      logger.debug(`Executing command '${commandName}' completed in ~${executeTimer}`);
 
       if (error) {
         logger.warn(`An error occurred while executing command '${commandName}'`);
@@ -86,9 +86,19 @@ abstract class Strategy<T extends StrategyOptions> {
         if (commands.length) {
           const executionTimer = timer();
 
+          this.logger.info("Executing commands...");
+
           await this.executeCommands(commands);
 
-          this.logger.info(`Execution completed in ${executionTimer}`);
+          this.logger.info("Cleaning up...");
+
+          await Promise.all(commands.map((command) => {
+            return command.cleanup().catch(e => {
+              this.logger.warn(e);
+            });
+          }));
+
+          this.logger.info(`Execution completed in ~${executionTimer}`);
         }
         //
         else {
@@ -100,6 +110,8 @@ abstract class Strategy<T extends StrategyOptions> {
     }
     catch (e) {
       process.exitCode = 1;
+
+      this.logger.error("Release failed");
 
       throw e;
     }

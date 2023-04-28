@@ -173,7 +173,7 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
     });
 
     if (response.status !== 200) {
-      throw new Error(`Failed to toke release out of draft mode. Status code is ${response.status}`);
+      throw new Error(`Failed to take release out of draft mode. Status code is ${response.status}`);
     }
 
     return response.json();
