@@ -47,12 +47,31 @@ const sortTags = (tags: MergedTag[]): MergedTag[] => {
 };
 
 const inc = (version: string, type: string, preReleaseId?: string) => {
+  let v: string | null;
+
   if (preReleaseId) {
-    return semver.inc(version, "prerelease", preReleaseId);
+    v = semver.inc(version, "prerelease", preReleaseId);
+  }
+  else {
+    v = semver.inc(version, type as semver.ReleaseType);
   }
 
-  return semver.inc(version, type);
+  if (v === null) {
+    throw new Error(`semantic version is '${version}' is not valid`);
+  }
+
+  return v;
 };
+
+const clean = (version: string) => {
+  const v = semver.clean(version);
+
+  if (v === null) {
+    throw new Error(`semantic version is '${version}' is not valid`);
+  }
+
+  return v;
+}
 
 const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Options> => {
   const stableBranchName = options.stableBranchName;
@@ -249,7 +268,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
             }
           }
 
-          versionsConventionalCommits[semver.clean(tag.name)] = conventionalCommits;
+          versionsConventionalCommits[clean(tag.name)] = conventionalCommits;
         }
       }
 
@@ -272,7 +291,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
       const tags = await getMergedTags();
 
       return tags.map((tags) => {
-        return semver.clean(tags.name);
+        return clean(tags.name);
       });
     });
   };
@@ -293,7 +312,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
   };
 
   const getNextVersion = async (): Promise<string> => {
-    return memo("next_version", async () => {
+    return memo<Promise<string>>("next_version", async () => {
       const previousVersion = await getPreviousVersion();
       const conventionalCommits = await getConventionalCommits();
       const releaseCommits = conventionalCommits.filter(opt.isReleaseCommit);
