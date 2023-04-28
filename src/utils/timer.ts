@@ -9,7 +9,9 @@ const timer = (): Timer => {
   const start = process.hrtime();
 
   const elapsedMs = (): number => {
-    return process.hrtime(start)[1] / 1000000;
+    const end = process.hrtime(start);
+
+    return (end[0] * 1000000000 + start[1]) / 1000000;
   };
 
   const toString = (): string => {

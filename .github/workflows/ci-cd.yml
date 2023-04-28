@@ -26,24 +26,20 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           persist-credentials: true
 
-      - name: Determine Node.js version to use
-        run: echo "::set-output name=version::$(cat .nvmrc)"
-        id: nvm
-
       # https://github.com/actions/setup-node
       - name: Setup Node.js ${{ steps.nvm.outputs.version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ steps.nvm.outputs.version }}
+          node-version-file: '.nvmrc'
 
       # https://github.com/actions/cache
       - name: Cache node modules
         id: cache-node-modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.npm_config_cache }}
           key: ${{ env.npm_cache_key }}-${{ hashFiles('package.json') }}
