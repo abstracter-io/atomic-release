@@ -10,7 +10,7 @@ A strategy is an object with two key methods, "getCommands" which provides an ar
 ##### logger*
 
 Type: [Logger](ports/logger.md)  
-Default: [processStdoutLogger](src/adapters/process-stdout-logger/process-stdout-logger.ts)
+Default: [processStdoutLogger](/src/adapters/process-stdout-logger/process-stdout-logger.ts)
 
 ##### release
 
