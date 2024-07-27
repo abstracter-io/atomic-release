@@ -1,7 +1,7 @@
 import parseAuthor from "parse-author";
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
 
-type GitCommitCommandOptions = ExecaCommandOptions & {
+type GitCommitCommandConfig = ExecaCommandConfig & {
   actor?: string;
 
   commitMessage: string;
@@ -19,20 +19,16 @@ type GitCommitCommandOptions = ExecaCommandOptions & {
     filePaths: new Set(["path/relative/to/working/directory/file.txt"]),
  });
  */
-class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
+class GitCommitCommand extends ExecaCommand<GitCommitCommandConfig> {
   private filesCommitted: boolean;
 
-  public constructor(options: GitCommitCommandOptions) {
-    super(options);
-  }
-
   private async stageAndCommit(): Promise<void> {
-    await this.execa("git", ["add", ...Array.from(this.options.filePaths)]);
+    await this.execa("git", ["add", ...Array.from(this.config.filePaths)]);
 
     const commitEnvVars = {};
 
-    if (this.options.actor) {
-      const { name, email } = parseAuthor(this.options.actor);
+    if (this.config.actor) {
+      const { name, email } = parseAuthor(this.config.actor);
 
       if (!name || !email) {
         throw new Error("actor must follow \"name <email>\" format");
@@ -46,7 +42,7 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
       });
     }
 
-    await this.execa("git", ["commit", "-m", this.options.commitMessage], {
+    await this.execa("git", ["commit", "-m", this.config.commitMessage], {
       env: commitEnvVars,
     });
   }
@@ -62,8 +58,8 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
 
     this.filesCommitted = true;
 
-    this.logger.info(`Committed files ${Array.from(this.options.filePaths).join(", ")}`);
+    this.logger.info(`Committed files ${Array.from(this.config.filePaths).join(", ")}`);
   }
 }
 
-export { GitCommitCommand, GitCommitCommandOptions };
+export { GitCommitCommand, GitCommitCommandConfig };

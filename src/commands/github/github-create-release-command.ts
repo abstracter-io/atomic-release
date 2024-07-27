@@ -1,11 +1,11 @@
 import fs from "fs";
+import streams from "node:stream/web";
 import path from "path";
 import mime from "mime";
 import to from "await-to-js";
-import { Response } from "node-fetch";
 
 import { timer } from "../../utils/timer";
-import { GithubHttpCommand, GithubHttpCommandOptions } from "./github-http-command";
+import { GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command";
 
 type Asset = {
   // An alternate short description of the asset.
@@ -20,12 +20,12 @@ type Asset = {
 type File = {
   mimeType: string;
   bytesSize: number;
-  readStream: NodeJS.ReadableStream;
+  readStream: ReadableStream;
 };
 
 type ReleaseRestResource = Record<string, unknown>;
 
-type GithubCreateReleaseCommandOptions = GithubHttpCommandOptions & {
+type GithubCreateReleaseCommandConfig = GithubHttpCommandConfig & {
   // name of the repo
   repo: string;
 
@@ -64,15 +64,11 @@ type GithubCreateReleaseCommandOptions = GithubHttpCommandOptions & {
     ],
   });
  */
-class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCommandOptions> {
+class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCommandConfig> {
   private createdRelease: ReleaseRestResource;
 
-  public constructor(options: GithubCreateReleaseCommandOptions) {
-    super(options);
-  }
-
   private getAssets(): Asset[] {
-    const assets = this.options.assets ?? [];
+    const assets = this.config.assets ?? [];
     const uniquelyNamedAssets = new Map<string, Asset>();
 
     for (const asset of assets) {
@@ -96,9 +92,9 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
   }
 
   private async createRelease(): Promise<ReleaseRestResource> {
-    const { owner, repo, name, tagName, body, isStable } = this.options;
+    const { owner, repo, name, tagName, body, isStable } = this.config;
     const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
-    const hasAssets = Array.isArray(this.options.assets) && this.options.assets.length > 0;
+    const hasAssets = Array.isArray(this.config.assets) && this.config.assets.length > 0;
     const response = await this.fetch(url, {
       method: "POST",
 
@@ -127,10 +123,16 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
 
     if (stat) {
       if (stat.isFile()) {
+        const mimeType = mime.getType(path.extname(absoluteFilePath));
+
+        if (mimeType === null) {
+          throw new Error('unknown mime type');
+        }
+
         return {
+          mimeType,
           bytesSize: stat.size,
-          mimeType: mime.getType(path.extname(absoluteFilePath)),
-          readStream: fs.createReadStream(absoluteFilePath),
+          readStream: fs.createReadStream(absoluteFilePath) as any,
         };
       }
     }
@@ -143,7 +145,7 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
   }
 
   private async deleteRelease(resource: ReleaseRestResource): Promise<void> {
-    const { owner, repo } = this.options;
+    const { owner, repo } = this.config;
     const releaseURL = resource.html_url;
     const url = `https://api.github.com/repos/${owner}/${repo}/releases/${resource.id}`;
     const response = await this.fetch(url, {
@@ -245,4 +247,4 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
   }
 }
 
-export { GithubCreateReleaseCommand, GithubCreateReleaseCommandOptions };
+export { GithubCreateReleaseCommand, GithubCreateReleaseCommandConfig };

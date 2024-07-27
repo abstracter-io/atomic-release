@@ -1,6 +1,6 @@
 import uriTemplates from "uri-templates";
 
-import { HttpCommand, HttpCommandOptions } from "../http-command";
+import { HttpCommand, HttpCommandConfig } from "../http-command";
 
 const enum MimeTypes {
   V3 = "application/vnd.github.v3+json",
@@ -10,15 +10,15 @@ const DEFAULT_HEADERS = {
   Accept: "application/vnd.github.v3+json",
 };
 
-type GithubHttpCommandOptions = HttpCommandOptions;
+type GithubHttpCommandConfig = HttpCommandConfig;
 
-abstract class GithubHttpCommand<T extends GithubHttpCommandOptions> extends HttpCommand<T> {
-  protected constructor(options: T) {
+abstract class GithubHttpCommand<T extends GithubHttpCommandConfig> extends HttpCommand<T> {
+  public constructor(config: T) {
     super({
-      ...options,
+      ...config,
       headers: {
         ...DEFAULT_HEADERS,
-        ...options.headers,
+        ...config.headers,
       },
     });
   }
@@ -28,4 +28,4 @@ abstract class GithubHttpCommand<T extends GithubHttpCommandOptions> extends Htt
   }
 }
 
-export { MimeTypes, GithubHttpCommand, GithubHttpCommandOptions };
+export { MimeTypes, GithubHttpCommand, GithubHttpCommandConfig };

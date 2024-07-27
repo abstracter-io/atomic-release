@@ -1,13 +1,13 @@
-import { NpmCommand, NpmCommandOptions } from "./npm-command";
+import { NpmCommand, NpmCommandConfig } from "./npm-command";
 
-type NpmPublishPackageCommandOptions = NpmCommandOptions & {
+type NpmPublishPackageCommandConfig = NpmCommandConfig & {
   tag?: string;
   registry?: string;
   undoPublish?: boolean;
 };
 
 /*
-  <b>NOTE</b>: THIS COMMAND SHOULD BE THE LAST COMMAND TO EXECUTE.
+  <b>NOTE</b>: THIS COMMAND MOST LIKELY NEED TO BE THE LAST COMMAND TO EXECUTE.
 
   The commonly used registry (https://registry.npmjs.org) does
   allow removing a published package but does not allow publishing
@@ -27,28 +27,20 @@ type NpmPublishPackageCommandOptions = NpmCommandOptions & {
     workingDirectory: "/absolute/path", <-- package.json should be inside
  });
  */
-class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandOptions> {
+class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandConfig> {
   private publishedPackage: string;
-
-  public constructor(options: NpmPublishPackageCommandOptions) {
-    super(options);
-  }
-
-  private async unpublish(): Promise<void> {
-    await this.execa("npm", ["unpublish", this.publishedPackage], {
-      cwd: this.options.workingDirectory,
-    });
-  }
 
   private async publish(args: string[]): Promise<void> {
     await this.execa("npm", ["publish", ...args], {
-      cwd: this.options.workingDirectory,
+      cwd: this.config.workingDirectory,
     });
   }
 
   public async undo(): Promise<void> {
-    if (this.publishedPackage && this.options.undoPublish === true) {
-      await this.unpublish();
+    if (this.publishedPackage && this.config.undoPublish === true) {
+      await this.execa("npm", ["unpublish", this.publishedPackage], {
+        cwd: this.config.workingDirectory,
+      });
     }
   }
 
@@ -61,7 +53,7 @@ class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandOption
     //
     else {
       const args: string[] = [];
-      const { tag, registry } = this.options;
+      const { tag, registry } = this.config;
 
       if (tag) {
         args.push("--tag", tag);
@@ -84,4 +76,4 @@ class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandOption
   }
 }
 
-export { NpmPublishPackageCommand, NpmPublishPackageCommandOptions };
+export { NpmPublishPackageCommand, NpmPublishPackageCommandConfig };

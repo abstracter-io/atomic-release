@@ -1,24 +1,23 @@
 import fetchDefaults from "fetch-defaults";
-import fetch, { Response, RequestInfo, RequestInit } from "node-fetch";
 
-import { Command, CommandOptions } from "../";
+import { Command, CommandConfig } from "../sdk/command";
 
 type Fetch = typeof fetch;
 
-type HttpCommandOptions = CommandOptions & {
+type HttpCommandConfig = CommandConfig & {
   headers?: Record<string, string>;
   fetch?: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 };
 
-abstract class HttpCommand<T extends HttpCommandOptions> extends Command<T> {
+abstract class HttpCommand<T extends HttpCommandConfig> extends Command<T> {
   private readonly _fetch: Fetch;
 
-  protected constructor(options: T) {
-    super(options);
+  protected constructor(config: T) {
+    super(config);
 
-    this._fetch = fetchDefaults(options.fetch ?? fetch, {
+    this._fetch = fetchDefaults(config.fetch ?? fetch, {
       headers: {
-        ...options.headers,
+        ...config.headers,
       },
     });
   }
@@ -28,4 +27,4 @@ abstract class HttpCommand<T extends HttpCommandOptions> extends Command<T> {
   }
 }
 
-export { HttpCommand, HttpCommandOptions };
+export { HttpCommand, HttpCommandConfig };

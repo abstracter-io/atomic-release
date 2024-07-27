@@ -1,2 +1,2 @@
-export * from "./sdk/command";
-export * from "./sdk/strategy";
+export * as SDK from "./sdk";
+export * as Commands from "./commands";

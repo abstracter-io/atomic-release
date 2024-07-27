@@ -15,7 +15,7 @@ Type: `object literal`
 ##### fetch?
 
 Type: `function`  
-Default: `node-fetch`
+Default: `node built-in fetch`
 
 ### Example
 

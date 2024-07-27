@@ -1,6 +1,6 @@
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
 
-type GitSwitchCommandOptions = ExecaCommandOptions & {
+type GitSwitchCommandOptions = ExecaCommandConfig & {
   branchName: string;
 };
 
@@ -14,10 +14,6 @@ type GitSwitchCommandOptions = ExecaCommandOptions & {
 class GitSwitchBranchCommand extends ExecaCommand<GitSwitchCommandOptions> {
   private initialBranchName: string;
   private createdBranch: boolean;
-
-  public constructor(options: GitSwitchCommandOptions) {
-    super(options);
-  }
 
   private async branchName() {
     const result = await this.execa("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
@@ -49,14 +45,14 @@ class GitSwitchBranchCommand extends ExecaCommand<GitSwitchCommandOptions> {
     }
 
     if (this.createdBranch) {
-      await this.execa("git", ["branch", "-D", this.options.branchName]);
+      await this.execa("git", ["branch", "-D", this.config.branchName]);
 
-      this.logger.info(`Deleted branch '${this.options.branchName}'`);
+      this.logger.info(`Deleted branch '${this.config.branchName}'`);
     }
   }
 
   public async do(): Promise<void> {
-    const branchName = this.options.branchName;
+    const branchName = this.config.branchName;
     const currentBranch = await this.branchName();
 
     if (!branchName) {

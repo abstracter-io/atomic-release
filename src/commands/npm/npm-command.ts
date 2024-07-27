@@ -1,14 +1,14 @@
 import fs from "fs";
 import type { PackageJson } from "type-fest";
 
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
 
-type NpmCommandOptions = ExecaCommandOptions;
+type NpmCommandConfig = ExecaCommandConfig;
 
-abstract class NpmCommand<T extends NpmCommandOptions> extends ExecaCommand<T> {
+abstract class NpmCommand<T extends NpmCommandConfig> extends ExecaCommand<T> {
   protected readonly packageJsonFilePath: string;
 
-  protected constructor(options: T) {
+  public constructor(options: T) {
     super(options);
 
     this.packageJsonFilePath = `${options.workingDirectory}/package.json`;
@@ -24,4 +24,4 @@ abstract class NpmCommand<T extends NpmCommandOptions> extends ExecaCommand<T> {
   }
 }
 
-export { NpmCommand, NpmCommandOptions };
+export { NpmCommand, NpmCommandConfig };

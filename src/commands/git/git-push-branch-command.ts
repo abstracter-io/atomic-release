@@ -1,6 +1,6 @@
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
 
-type GitPushBranchCommandOptions = ExecaCommandOptions & {
+type GitPushBranchCommandConfig = ExecaCommandConfig & {
   remote?: string;
 
   branchName: string;
@@ -16,50 +16,48 @@ type GitPushBranchCommandOptions = ExecaCommandOptions & {
     failWhenRemoteBranchExists: false, <-- true by default
  });
  */
-class GitPushBranchCommand extends ExecaCommand<GitPushBranchCommandOptions> {
+class GitPushBranchCommand extends ExecaCommand<GitPushBranchCommandConfig> {
   private readonly remote: string;
 
-  private remoteBranchCreated: boolean;
+  private pushed: boolean;
 
-  public constructor(options: GitPushBranchCommandOptions) {
-    super(options);
+  public constructor(config: GitPushBranchCommandConfig) {
+    super(config);
 
-    this.remote = options.remote ?? "origin";
+    this.remote = config.remote ?? "origin";
   }
 
   private async push(): Promise<void> {
-    await this.execa("git", ["push", "--set-upstream", this.remote, this.options.branchName]);
+    await this.execa("git", ["push", "--set-upstream", this.remote, this.config.branchName]);
   }
 
   private async remoteBranchExists(): Promise<boolean> {
-    const { stdout } = await this.execa("git", ["ls-remote", this.remote, this.options.branchName]);
+    const { stdout } = await this.execa("git", ["ls-remote", this.remote, this.config.branchName]);
 
     return stdout.length > 0;
   }
 
   public async undo(): Promise<void> {
-    if (this.remoteBranchCreated) {
-      await this.execa("git", ["push", this.remote, "--delete", this.options.branchName]);
-
-      this.logger.info(`Deleted remote branch '${this.options.branchName}'`);
+    if (this.pushed) {
+      this.logger.warn(`Cannot un-push remote branch '${this.config.branchName}'`);
     }
   }
 
   public async do(): Promise<void> {
     const remoteBranchExists = await this.remoteBranchExists();
 
-    if (remoteBranchExists && (this.options.failWhenRemoteBranchExists ?? true)) {
-      throw new Error(`Remote '${this.remote}' already has a branch named '${this.options.branchName}'`);
+    if (remoteBranchExists && (this.config.failWhenRemoteBranchExists ?? true)) {
+      throw new Error(`Remote '${this.remote}' already has a branch named '${this.config.branchName}'`);
     }
     //
     else {
       await this.push();
 
-      this.remoteBranchCreated = true;
+      this.pushed = true;
 
-      this.logger.info(`Pushed branch '${this.options.branchName}'`);
+      this.logger.info(`Pushed branch '${this.config.branchName}'`);
     }
   }
 }
 
-export { GitPushBranchCommand, GitPushBranchCommandOptions };
+export { GitPushBranchCommand, GitPushBranchCommandConfig };

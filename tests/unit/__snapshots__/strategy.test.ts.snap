@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`strategy > config state 1`] = `
+StrategyStub {
+  "commandProviders": [],
+  "config": {
+    "logger": {
+      "debug": [MockFunction spy],
+      "error": [MockFunction spy],
+      "info": [MockFunction spy],
+      "warn": [MockFunction spy],
+    },
+    "release": ReleaseStub {
+      "getChangelog": [MockFunction spy],
+      "getChangelogByVersion": [MockFunction spy],
+      "getMentionedIssues": [MockFunction spy],
+      "getNextVersion": [MockFunction spy],
+      "getPreviousVersion": [MockFunction spy],
+      "getVersions": [MockFunction spy],
+    },
+    "test": 1,
+  },
+}
+`;

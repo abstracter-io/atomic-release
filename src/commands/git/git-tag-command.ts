@@ -1,8 +1,8 @@
 import to from "await-to-js";
 
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
 
-type GitTagCommandOptions = ExecaCommandOptions & {
+type GitTagCommandConfig = ExecaCommandConfig & {
   name: string;
   remote?: string;
 };
@@ -17,32 +17,32 @@ type GitTagCommandOptions = ExecaCommandOptions & {
     remote: "custom-remote", <-- "origin" by default
  });
  */
-class GitTagCommand extends ExecaCommand<GitTagCommandOptions> {
+class GitTagCommand extends ExecaCommand<GitTagCommandConfig> {
   private readonly remote: string;
   private readonly tagRef: string;
 
   private localTagCreated = false;
   private remoteTagCreated = false;
 
-  public constructor(options: GitTagCommandOptions) {
-    super(options);
+  public constructor(config: GitTagCommandConfig) {
+    super(config);
 
-    this.remote = options.remote ?? "origin";
-    this.tagRef = `refs/tags/${options.name}`;
+    this.remote = config.remote ?? "origin";
+    this.tagRef = `refs/tags/${config.name}`;
   }
 
   private async deleteLocalTag(): Promise<void> {
     if (this.localTagCreated) {
-      const [error] = await to(this.execa("git", ["tag", "--delete", this.options.name]));
+      const [error] = await to(this.execa("git", ["tag", "--delete", this.config.name]));
 
       if (error) {
-        this.logger.error(new Error(`Failed to delete local tag '${this.options.name}'`));
+        this.logger.error(new Error(`Failed to delete local tag '${this.config.name}'`));
 
         this.logger.error(error);
       }
       //
       else {
-        this.logger.info(`Deleted local tag '${this.options.name}'`);
+        this.logger.info(`Deleted local tag '${this.config.name}'`);
       }
     }
   }
@@ -52,25 +52,25 @@ class GitTagCommand extends ExecaCommand<GitTagCommandOptions> {
       const [error] = await to(this.execa("git", ["push", this.remote, "--delete", this.tagRef]));
 
       if (error) {
-        this.logger.error(new Error(`Failed to delete remote tag '${this.options.name}'`));
+        this.logger.error(new Error(`Failed to delete remote tag '${this.config.name}'`));
 
         this.logger.error(error);
       }
       //
       else {
-        this.logger.info(`Deleted remote tag '${this.options.name}'`);
+        this.logger.info(`Deleted remote tag '${this.config.name}'`);
       }
     }
   }
 
   private async localTagExists(): Promise<boolean> {
-    const { stdout } = await this.execa("git", ["tag", "--list", this.options.name]);
+    const { stdout } = await this.execa("git", ["tag", "--list", this.config.name]);
 
     return stdout.length > 0;
   }
 
   private async createLocalTag(): Promise<boolean> {
-    const { exitCode } = await this.execa("git", ["tag", this.options.name]);
+    const { exitCode } = await this.execa("git", ["tag", this.config.name]);
 
     return exitCode === 0;
   }
@@ -94,7 +94,7 @@ class GitTagCommand extends ExecaCommand<GitTagCommandOptions> {
   }
 
   public async do(): Promise<void> {
-    const tagName = this.options.name;
+    const tagName = this.config.name;
     const remoteTagExists = await this.remoteTagExists();
 
     if (remoteTagExists) {
@@ -117,4 +117,4 @@ class GitTagCommand extends ExecaCommand<GitTagCommandOptions> {
   }
 }
 
-export { GitTagCommand, GitTagCommandOptions };
+export { GitTagCommand, GitTagCommandConfig };

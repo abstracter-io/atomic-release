@@ -1,6 +1,6 @@
 import execa from "execa";
 
-import { Command, CommandOptions } from "../";
+import { Command, CommandConfig } from "../sdk/command";
 
 type ExecaResult = {
   stdout: string;
@@ -8,7 +8,7 @@ type ExecaResult = {
   exitCode: number;
 };
 
-type ExecaCommandOptions = CommandOptions & {
+type ExecaCommandConfig = CommandConfig & {
   // when true, stderr / stdout are not piped to parent process
   silent?: boolean;
 
@@ -16,14 +16,14 @@ type ExecaCommandOptions = CommandOptions & {
   workingDirectory: string;
 };
 
-abstract class ExecaCommand<T extends ExecaCommandOptions> extends Command<T> {
+abstract class ExecaCommand<T extends ExecaCommandConfig> extends Command<T> {
   protected async execa(script: string, args: string[], options?: execa.Options): Promise<ExecaResult> {
     const subprocess = execa(script, args, {
-      cwd: this.options.workingDirectory,
+      cwd: this.config.workingDirectory,
       ...options,
     });
 
-    if (!(this.options.silent ?? true)) {
+    if (!(this.config.silent ?? true)) {
       subprocess.stdout?.pipe(process.stdout);
       subprocess.stderr?.pipe(process.stderr);
     }
@@ -38,4 +38,4 @@ abstract class ExecaCommand<T extends ExecaCommandOptions> extends Command<T> {
   }
 }
 
-export { ExecaCommand, ExecaCommandOptions };
+export { ExecaCommand, ExecaCommandConfig };

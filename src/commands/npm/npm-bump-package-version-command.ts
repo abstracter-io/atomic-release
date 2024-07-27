@@ -1,6 +1,6 @@
-import { NpmCommand, NpmCommandOptions } from "./npm-command";
+import { NpmCommand, NpmCommandConfig } from "./npm-command";
 
-type NpmBumpPackageVersionCommandOptions = NpmCommandOptions & {
+type NpmBumpPackageVersionCommandConfig = NpmCommandConfig & {
   version: string;
   preReleaseId?: string;
 };
@@ -11,27 +11,21 @@ type NpmBumpPackageVersionCommandOptions = NpmCommandOptions & {
     preReleaseId: "beta",
     workingDirectory: "/absolute/path", <-- package.json should be inside
  });
-
- <br>
-
+---
  @example bumping to "1.1.0" (does not matter what the current version is)
  const command = new NpmBumpPackageVersionCommand({
     version: "1.1.0",
     workingDirectory: "/absolute/path", <-- package.json should be inside
  });
  */
-class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionCommandOptions> {
+class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionCommandConfig> {
   private initialVersion: string;
   private versionChanged: boolean;
 
-  public constructor(options: NpmBumpPackageVersionCommandOptions) {
-    super(options);
-  }
-
   private async bumpVersion(): Promise<string> {
-    const { version, preReleaseId } = this.options;
+    const preReleaseId = this.config.preReleaseId;
 
-    await this.executeVersionCommand(version);
+    await this.executeVersionCommand(this.config.version);
 
     if (preReleaseId) {
       await this.executeVersionCommand(`prerelease --preid=${preReleaseId}`);
@@ -42,7 +36,7 @@ class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionComma
 
   private async executeVersionCommand(arg: string): Promise<void> {
     await this.execa("npm", ["version", ...arg.split(" "), "--no-git-tag-version"], {
-      cwd: this.options.workingDirectory,
+      cwd: this.config.workingDirectory,
     });
   }
 
@@ -74,4 +68,4 @@ class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionComma
   }
 }
 
-export { NpmBumpPackageVersionCommand, NpmBumpPackageVersionCommandOptions };
+export { NpmBumpPackageVersionCommand, NpmBumpPackageVersionCommandConfig };
