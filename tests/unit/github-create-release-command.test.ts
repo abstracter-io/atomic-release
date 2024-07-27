@@ -1,6 +1,7 @@
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import to from "await-to-js";
-import fs, { ReadStream } from "fs";
+import { Readable } from "node:stream";
 import uriTemplate from "uri-templates";
 import { vitest, test, expect, describe, beforeEach } from "vitest";
 
@@ -85,12 +86,12 @@ describe("github create release command", () => {
 
       headers: {
         "X-Custom-Header": "1",
-        "Content-Type": expect.any(String),
+        "Content-Type": 'video/mp2t',
         "Content-Length": fs.statSync(__filename).size.toString(),
         "Accept": V3_MIME_TYPE,
       },
 
-      body: expect.any(ReadStream),
+      body: expect.any(Readable),
     };
 
     await gitCommandStub.do();
@@ -158,7 +159,7 @@ describe("github create release command", () => {
     await gitCommandStub.do();
 
     fetch.mockClear().mockImplementation(async () => {
-      return new Response("", {
+      return new Response(null, {
         status: 204,
         statusText: "No Content",
       });

@@ -1,13 +1,18 @@
-import fs from "fs";
 import to from "await-to-js";
 import { vitest, describe, test, expect, beforeEach } from "vitest";
 
 import { Stubs } from "../stubs";
 import { Commands } from "../../src";
 
+const execa = vitest.fn();
+
 const LOGGER = new Stubs.LoggerStub();
 
-const execute = vitest.fn();
+const PACKAGE_JSON = {
+  private: false,
+  name: 'test',
+  version: '0.1.0',
+};
 
 const CMD_CONFIG: Commands.NpmBumpPackageVersionCommandConfig = {
   logger: LOGGER,
@@ -21,34 +26,25 @@ class NpmBumpPackageVersionCommandStub extends Commands.NpmBumpPackageVersionCom
   public constructor(config?: Partial<Commands.NpmBumpPackageVersionCommandConfig>) {
     super(Object.assign({}, CMD_CONFIG, config));
   }
+
+  getPackageJson = vitest.fn(async () => {
+    return PACKAGE_JSON
+  })
 }
 
 vitest.mock("execa", () => {
   return {
     default: async (...args) => {
-      return execute(...args);
+      return execa(...args);
     }
   };
 });
 
 describe("bumping package.json version", () => {
-  let readFile;
-
-  const PACKAGE_NAME = "test";
-  const PACKAGE_VERSION = "0.1.0";
   const PACKAGE_JSON_PATH = `${CMD_CONFIG.workingDirectory}/package.json`;
 
   beforeEach(() => {
-    readFile = vitest.spyOn(fs.promises, "readFile");
-
-    readFile.mockImplementationOnce(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
-        version: PACKAGE_VERSION,
-      });
-    });
-
-    execute.mockImplementation(async () => {
+    execa.mockReset().mockImplementation(async () => {
       return {
         exitCode: 0,
         stdout: "",
@@ -61,10 +57,12 @@ describe("bumping package.json version", () => {
     const commandStub = new NpmBumpPackageVersionCommandStub();
     const expectedError = `Package ${PACKAGE_JSON_PATH} 'version' or 'name' properties are missing`;
 
-    readFile.mockReset().mockImplementation(async () => {
-      return JSON.stringify({
-        name: undefined,
-      });
+    commandStub.getPackageJson.mockImplementation(async () => {
+      return {
+        name: undefined as any,
+        version: '1',
+        private: true,
+      };
     });
 
     return expect(commandStub.do()).rejects.toEqual(new Error(expectedError));
@@ -76,18 +74,22 @@ describe("bumping package.json version", () => {
       version: expectedVersion,
     });
 
-    readFile.mockImplementationOnce(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
-        version: expectedVersion,
-      });
+    commandStub.getPackageJson.mockImplementationOnce(async () => {
+      return PACKAGE_JSON
     });
+
+    commandStub.getPackageJson.mockImplementationOnce(async () => {
+      return {
+        ...PACKAGE_JSON,
+        version: expectedVersion,
+      }
+    })
 
     await commandStub.do();
 
-    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_NAME}' version to '${expectedVersion}'`);
+    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
 
-    expect(execute).toBeCalledWith("npm", ["version", expectedVersion, "--no-git-tag-version"], {
+    expect(execa).toBeCalledWith("npm", ["version", expectedVersion, "--no-git-tag-version"], {
       cwd: CMD_CONFIG.workingDirectory,
     });
   });
@@ -96,11 +98,11 @@ describe("bumping package.json version", () => {
     const commandStub = new NpmBumpPackageVersionCommandStub();
     const expectedError = `Package ${PACKAGE_JSON_PATH} 'version' or 'name' properties are missing`;
 
-    readFile.mockReset().mockImplementation(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
-        version: undefined,
-      });
+    commandStub.getPackageJson.mockImplementation(async () => {
+      return {
+        ...PACKAGE_JSON,
+        version: undefined as any,
+      };
     });
 
     const [error] = await to(commandStub.do());
@@ -116,72 +118,54 @@ describe("bumping package.json version", () => {
     });
     const expectedArgs = ["version", "prerelease", `--preid=${expectedPreReleaseId}`, "--no-git-tag-version"];
 
-    readFile.mockImplementationOnce(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
+    commandStub.getPackageJson.mockImplementation(async () => {
+      return {
+        ...PACKAGE_JSON,
         version: expectedVersion,
-      });
+      };
     });
 
     await commandStub.do();
 
-    expect(execute).toBeCalledWith("npm", expectedArgs, {
+    expect(execa).toBeCalledWith("npm", expectedArgs, {
       cwd: CMD_CONFIG.workingDirectory,
     });
 
-    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_NAME}' version to '${expectedVersion}'`);
+    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
   });
 
   test("undo reverts to initial version when version was bumped", async () => {
-    const expectedVersion = `0.${Date.now()}.0`;
     const commandStub = new NpmBumpPackageVersionCommandStub({
-      version: expectedVersion,
+      version: `0.${Date.now()}.0`,
     });
-    const expectedArgs = ["version", expectedVersion, "--no-git-tag-version"];
-
-    readFile.mockImplementationOnce(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
-        version: expectedVersion,
-      });
-    });
+    const expectedArgs = ["version", PACKAGE_JSON.version, "--no-git-tag-version"];
 
     await commandStub.do();
 
-    readFile.mockImplementationOnce(async () => {
-      return JSON.stringify({
-        name: PACKAGE_NAME,
-        version: PACKAGE_VERSION,
-      });
-    });
-
     await commandStub.undo();
 
-    expect(execute).toBeCalledWith("npm", expectedArgs, {
+    expect(execa).toBeCalledWith("npm", expectedArgs, {
       cwd: CMD_CONFIG.workingDirectory,
     });
 
-    expect(LOGGER.info).toBeCalledWith(`Reverted '${PACKAGE_NAME}' version back to '${PACKAGE_VERSION}'`);
+    expect(LOGGER.info).toBeCalledWith(`Reverted '${PACKAGE_JSON.name}' version back to '${PACKAGE_JSON.version}'`);
   });
 
   test("undo does not revert to initial version when version was not bumped", async () => {
-    const expectedVersion = `0.${Date.now()}.0`;
     const commandStub = new NpmBumpPackageVersionCommandStub({
-      version: expectedVersion,
+      version: PACKAGE_JSON.version,
     });
-    const expectedArgs = ["version", expectedVersion, "--no-git-tag-version"];
+    const expectedArgs = ["version", PACKAGE_JSON.version, "--no-git-tag-version"];
 
-    readFile.mockReset().mockImplementation(async () => {
-      return JSON.stringify({
-        name: "test",
-        version: undefined,
-      });
+    commandStub.getPackageJson.mockImplementation(async () => {
+      return PACKAGE_JSON;
     });
 
-    await to(commandStub.do());
+    await commandStub.do().catch(e => e);
+
     await commandStub.undo();
 
-    expect(execute).not.toBeCalledWith("npm", expectedArgs, {
+    expect(execa).not.toBeCalledWith("npm", expectedArgs, {
       cwd: CMD_CONFIG.workingDirectory,
     });
   });

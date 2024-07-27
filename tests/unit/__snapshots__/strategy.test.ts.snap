@@ -4,7 +4,7 @@ exports[`strategy > config state 1`] = `
 StrategyStub {
   "commandProviders": [],
   "config": {
-    "logger": {
+    "logger": LoggerStub {
       "debug": [MockFunction spy],
       "error": [MockFunction spy],
       "info": [MockFunction spy],

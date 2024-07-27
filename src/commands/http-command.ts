@@ -5,8 +5,8 @@ import { Command, CommandConfig } from "../sdk/command";
 type Fetch = typeof fetch;
 
 type HttpCommandConfig = CommandConfig & {
+  fetch?: Fetch;
   headers?: Record<string, string>;
-  fetch?: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 };
 
 abstract class HttpCommand<T extends HttpCommandConfig> extends Command<T> {
@@ -22,7 +22,7 @@ abstract class HttpCommand<T extends HttpCommandConfig> extends Command<T> {
     });
   }
 
-  protected async fetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+  protected fetch: Fetch = async (input, init) => {
     return this._fetch(input, init);
   }
 }

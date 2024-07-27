@@ -43,25 +43,31 @@ class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionComma
   public async do(): Promise<void> {
     const { version, name } = await this.getPackageJson();
 
-    if (!version || !name) {
-      throw new Error(`Package ${this.packageJsonFilePath} 'version' or 'name' properties are missing`);
+    if (version && name) {
+      this.initialVersion = version;
+
+      if (this.config.version !== version) {
+        const changedVersion = await this.bumpVersion();
+
+        this.logger.info(`Changed package '${name}' version to '${changedVersion}'`);
+
+        this.versionChanged = true;
+
+        return;
+      }
+
+      throw new Error('version should have changed');
     }
 
-    this.initialVersion = version;
-
-    this.logger.info(`Changed package '${name}' version to '${await this.bumpVersion()}'`);
-
-    this.versionChanged = true;
+    throw new Error(`Package ${this.packageJsonFilePath} 'version' or 'name' properties are missing`);
   }
 
   public async undo(): Promise<void> {
     if (this.versionChanged) {
-      const { name, version } = await this.getPackageJson();
+      const { name } = await this.getPackageJson();
       const initialVersion = this.initialVersion;
 
-      if (version !== initialVersion) {
-        await this.executeVersionCommand(initialVersion);
-      }
+      await this.executeVersionCommand(initialVersion);
 
       this.logger.info(`Reverted '${name}' version back to '${initialVersion}'`);
     }

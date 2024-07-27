@@ -1,6 +1,8 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
   "compilerOptions": {
+    "lib": ["es2020"],
+    "noLib": false,
     "target": "es2020",
     "module": "commonjs",
     "allowJs": true,
@@ -17,11 +19,12 @@
 
     "paths": {
       "@abstracter/atomic-release/*": ["./src/*"]
-    }
+    },
   },
 
   "include": [
-    "src"
+    "src",
+    "node_modules/conventional-changelog-conventionalcommits/index.d.ts"
   ],
 
   "exclude": [

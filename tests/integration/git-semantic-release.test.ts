@@ -1,5 +1,6 @@
-import { vitest, describe, test, expect, beforeEach } from 'vitest'
+// @ts-expect-error no types
 import conventionalChangelogPreset from "conventional-changelog-conventionalcommits";
+import { vitest, describe, test, expect, beforeEach } from 'vitest'
 
 import { SDK } from "../../src/index";
 import { Stubs } from "../stubs";

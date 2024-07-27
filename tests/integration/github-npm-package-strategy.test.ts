@@ -1,11 +1,10 @@
 import { vitest, describe, test, expect, beforeEach } from "vitest";
 
+import { Stubs } from "../stubs";
 import { SDK, Commands } from "../../src/index";
-
-import { spiedLogger } from "../stubs/spied-logger";
 import { githubNpmPackageStrategy } from "../../src/sdk";
 
-const LOGGER = spiedLogger();
+const LOGGER = new Stubs.LoggerStub();
 const HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
 const STABLE_BRANCH_NAME = "main";
 const PRE_RELEASE_BRANCH_NAME = "beta";

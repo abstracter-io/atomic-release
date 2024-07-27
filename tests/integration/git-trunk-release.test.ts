@@ -6,19 +6,6 @@ import { Stubs } from "../stubs";
 const HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
 const LOGGER = new Stubs.LoggerStub();
 
-const releaseOptions = () => {
-  return {
-    logger: LOGGER,
-    conventionalChangelogWriterContext: {
-      owner: "t",
-      repository: "t",
-      host: "https://github.com",
-      repoUrl: "https://github.com/t/t",
-      date: "2021-10-08",
-    },
-  };
-};
-
 const commit = () => {
   return {
     subject: "feat: ...",
@@ -35,6 +22,19 @@ const commit = () => {
     tags: [],
     hash: HASH,
     committedTimestamp: 1633686020134,
+  };
+};
+
+const releaseOptions = () => {
+  return {
+    logger: LOGGER,
+    conventionalChangelogWriterContext: {
+      owner: "t",
+      repository: "t",
+      host: "https://github.com",
+      repoUrl: "https://github.com/t/t",
+      date: "2021-10-08",
+    },
   };
 };
 

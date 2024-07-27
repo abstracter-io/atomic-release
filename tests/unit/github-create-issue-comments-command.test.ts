@@ -112,7 +112,7 @@ describe("comment in github issues", () => {
     await commandStub.do();
 
     fetch.mockClear().mockImplementation(() => {
-      return new Response("", {
+      return new Response(null, {
         status: 204,
         statusText: "No Content",
       });

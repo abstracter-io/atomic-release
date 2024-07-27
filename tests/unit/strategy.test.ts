@@ -4,9 +4,7 @@ import { SDK } from "../../src/index";
 
 import { Stubs } from "../stubs";
 
-import { spiedLogger } from "../stubs/spied-logger";
-
-const LOGGER = spiedLogger();
+const LOGGER = new Stubs.LoggerStub();
 
 describe("strategy", () => {
   let release: InstanceType<typeof Stubs.ReleaseStub>;
