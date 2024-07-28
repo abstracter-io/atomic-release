@@ -1,9 +1,6 @@
-import getStream from "get-stream";
-import intoStream from "into-stream";
-import { ConventionalChangelogPreset } from "conventional-changelog-preset-loader";
-import conventionalChangelogPreset from "conventional-changelog-conventionalcommits";
-import { writeChangelogString, Context as ChangelogWriterContext } from "conventional-changelog-writer";
-import { Commit as ConventionalCommit, CommitParser } from "conventional-commits-parser";
+import { loadPreset } from "conventional-changelog-preset-loader";
+import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
+import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
 
 import { Logger } from "./logger";
 import { Release } from "./release";
@@ -12,7 +9,13 @@ import { processStdoutLogger } from "./process-stdout-logger";
 
 import { memoize } from "../utils/memoize";
 
-type GitTrunkReleaseOptions = {
+type ConventionalPreset = {
+  parser: ParserOptions;
+  writer: WriterOptions;
+  whatBump: (commits: ConventionalCommit[]) => { level: number, reason: string };
+};
+
+type GitTrunkReleaseConfig = {
   logger?: Logger;
 
   gitClient?: GitExecaClient;
@@ -25,17 +28,17 @@ type GitTrunkReleaseOptions = {
 
   rawConventionalCommits?: (range: string) => Promise<{ hash: string; raw: string }[]>;
 
-  conventionalChangelogPreset?: ConventionalChangelogPreset;
+  conventionalChangelogPreset?: ConventionalPreset;
 
-  conventionalChangelogWriterContext: ChangelogWriterContext | null;
+  conventionalChangelogWriterContext: WriterContext | null;
 };
 
-type Options = Required<GitTrunkReleaseOptions>;
+type Options = Required<GitTrunkReleaseConfig>;
 
-const defaultOptions = async (options: GitTrunkReleaseOptions): Promise<Options> => {
-  const workingDirectory = options.workingDirectory ?? process.cwd();
-  const remote = options.remote ?? "origin";
-  const gitClient = options.gitClient ?? new GitExecaClient({
+const defaultConfig = async (config: GitTrunkReleaseConfig): Promise<Options> => {
+  const workingDirectory = config.workingDirectory ?? process.cwd();
+  const remote = config.remote ?? "origin";
+  const gitClient = config.gitClient ?? new GitExecaClient({
     remote,
     workingDirectory,
   });
@@ -77,17 +80,17 @@ const defaultOptions = async (options: GitTrunkReleaseOptions): Promise<Options>
     gitClient,
     workingDirectory,
 
-    logger: options.logger ?? processStdoutLogger({ name: "GitTrunkRelease" }),
-    changelogCommitFilter: options.changelogCommitFilter ?? changelogCommitFilter,
-    rawConventionalCommits: options.rawConventionalCommits ?? rawConventionalCommits,
-    conventionalChangelogPreset: options.conventionalChangelogPreset ?? (await conventionalChangelogPreset()),
-    conventionalChangelogWriterContext: options.conventionalChangelogWriterContext ?? null,
+    logger: config.logger ?? processStdoutLogger({ name: "GitTrunkRelease" }),
+    changelogCommitFilter: config.changelogCommitFilter ?? changelogCommitFilter,
+    rawConventionalCommits: config.rawConventionalCommits ?? rawConventionalCommits,
+    conventionalChangelogPreset: config.conventionalChangelogPreset ?? (await loadPreset("conventionalcommits")),
+    conventionalChangelogWriterContext: config.conventionalChangelogWriterContext ?? null,
   };
 };
 
-const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release> => {
+const gitTrunkRelease = async (config: GitTrunkReleaseConfig): Promise<Release> => {
   const memo = memoize();
-  const { logger, ...opt } = await defaultOptions(options);
+  const { logger, ...opt } = await defaultConfig(config);
   const preset = opt.conventionalChangelogPreset;
   const gitClient = opt.gitClient;
   const headHash = await gitClient.refHash("HEAD");
@@ -99,7 +102,7 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
     return commitParser.parse(rawConventionalCommit);
   };
 
-  const getChangelogWriterContext = (): ChangelogWriterContext => {
+  const getChangelogWriterContext = (): WriterContext<any> => {
     if (opt.conventionalChangelogWriterContext) {
       return opt.conventionalChangelogWriterContext;
     }
@@ -143,6 +146,8 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
     return memo("versions", async () => {
       const commits = await gitClient.commits("HEAD");
 
+      // FIXME: Perhaps its best to return the last two commits here
+
       commits.shift();
 
       return commits.map((commit) => {
@@ -153,8 +158,10 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
 
   const getChangelog = async (): Promise<string | null> => {
     return memo("changelog", async () => {
-      const nextVersion = await getNextVersion();
-      const commits = await getConventionalCommits();
+      const [nextVersion, commits] = await Promise.all([
+        getNextVersion(),
+        getConventionalCommits()
+      ]);
 
       if (commits.length) {
         const context = {
@@ -246,4 +253,4 @@ const gitTrunkRelease = async (options: GitTrunkReleaseOptions): Promise<Release
   };
 };
 
-export { gitTrunkRelease, GitTrunkReleaseOptions };
+export { gitTrunkRelease, GitTrunkReleaseConfig };

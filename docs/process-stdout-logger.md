@@ -1,6 +1,6 @@
 # processStdoutLogger
 
-An implementation of the SDK [Logger](../ports/logger.md) interface using `process.stdout`.
+An implementation of the SDK [Logger](./logger.md) interface using `process.stdout`.
 
 ### Options
 
@@ -24,9 +24,9 @@ The log level value may be one of the following: "ERROR", "WARN", "INFO" or "DEB
 ### Example
 
 ```js
-const processStdoutLogger = require("@abstracter/atomic-release/adapters/process-stdout-logger");
+const { SDK } = require("@abstracter/atomic-release");
 
-const logger = processStdoutLogger({ name: "ExamplaryLogger", logLevel: "DEBUG" });
+const logger = SDK.processStdoutLogger({ name: "ExamplaryLogger", logLevel: "DEBUG" });
 
 logger.debug("This message is printed because the log level is set to 'DEBUG'");
 ```

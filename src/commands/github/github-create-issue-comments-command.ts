@@ -100,7 +100,7 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
         const response = await this.createComment(issueComment);
 
         if (response) {
-          const resource = await response.json();
+          const resource = await response.json() as any;
 
           this.createdCommentsResources.push(resource);
 

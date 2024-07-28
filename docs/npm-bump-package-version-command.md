@@ -21,9 +21,9 @@ Type: `string`
 ### Example
 
 ```js
-const { NpmBumpPackageVersionCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new NpmBumpPackageVersionCommand({
+const command = new Commands.NpmBumpPackageVersionCommand({
   version: "1.0.0",
   preReleaseId: "beta",
   workingDirectory: "/absolute/path", <-- package.json should be inside

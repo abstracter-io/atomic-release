@@ -22,9 +22,9 @@ Default: `origin`
 ### Example
 
 ```js
-const { GitTagCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GitTagCommand({
+const command = new Commands.GitTagCommand({
   name: "v1.0.0",
   remote: "custom-remote",
 });

@@ -64,4 +64,4 @@ logger.info("this is informational");
 logger.debug("this helps troubleshooting");
 ```
 
-See [processStdoutLogger](../adapters/process-stdout-logger.md) for a reference implementation
+See [processStdoutLogger](./process-stdout-logger.md) for a reference implementation

@@ -5,7 +5,7 @@ import { Release } from "./release";
 import { GitClient } from "./git-client";
 import { GitStrategy } from "./git-strategy";
 import { GitExecaClient } from "./git-execa-client";
-import { gitSemanticRelease } from "./git-semantic-release";
+import { gitTagBasedRelease } from "./git-tag-based-release";
 import { processStdoutLogger } from "./process-stdout-logger";
 
 import * as Commands from "../commands";
@@ -44,7 +44,7 @@ const getParsedGithubURL = async () => {
 const createSemanticRelease = async () => {
   const url = await getParsedGithubURL()
 
-  return gitSemanticRelease({
+  return gitTagBasedRelease({
     stableBranchName: 'main',
 
     preReleaseBranches: {

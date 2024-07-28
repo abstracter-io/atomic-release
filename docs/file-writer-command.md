@@ -32,15 +32,15 @@ Possible values: `replace | prepend | append`
 ### Examples
 
 ```js
-const { FileWriterCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const createFileCommand = new FileWriterCommand({
+const createFileCommand = new Commands.FileWriterCommand({
   create: true,
   content: "This is SPARTA",
   absoluteFilePath: "/home/dev/project/new-file.txt",
 });
 
-const prependContentCommnd = new FileWriterCommand({
+const prependContentCommnd = new Commands.FileWriterCommand({
   content: "42",
   mode: "prepend",
   absoluteFilePath: "/home/dev/project/existing.txt",

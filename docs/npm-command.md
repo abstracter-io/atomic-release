@@ -4,14 +4,14 @@ An abstract class with a method to read a package.json.
 
 ### Options
 
-This class accpets the same options as [ExecaCommand](execa-command.md)
+This class accepts the same options as [ExecaCommand](execa-command.md)
 
 ### Example
 
 ```js
-const { NpmCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-class ExampleNpmCommand extends NpmCommand {
+class ExampleNpmCommand extends Commands.NpmCommand {
   async do() {
     console.log(await this.getPackageJson());
   }

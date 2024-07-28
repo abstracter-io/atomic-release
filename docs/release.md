@@ -40,4 +40,4 @@ interface Release {
 }
 ```
 
-See [gitSemanticRelease](../adapters/git-semantic-release.md) for a reference implementation
+See [gitTagBasedRelease](./git-tag-based-release.md) for a reference implementation

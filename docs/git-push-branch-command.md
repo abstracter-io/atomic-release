@@ -27,9 +27,9 @@ Default: `true`
 ### Example
 
 ```js
-const { GitPushBranchCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GitPushBranchCommand({
+const command = new Commands.GitPushBranchCommand({
   remote: "custom-remote",
   branchName: "v123-generated-files",
   failWhenRemoteBranchExists: false,

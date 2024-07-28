@@ -1,6 +1,6 @@
-# gitSemanticRelease
+# gitConventionalRelease
 
-An implementation of the SDK [Release](ports/release.md) interface that generates changelogs and  
+An implementation of the SDK [Release](./release.md) interface that generates changelogs and  
 semantic versions using [conventional-changelog packages](https://git.io/JKOLR)
 
 ### Options
@@ -150,9 +150,9 @@ Read about it here: [README.md#context](https://git.io/Jrnys)
 ### Example:
 
 ```js
-const { gitSemanticRelease } = require("@abstracter/atomic-release/adapters/git-conventional-release");
+const { SDK } = require("@abstracter/atomic-release");
 
-const semanticRelease = gitSemanticRelease({
+const semanticRelease = SDK.gitTagBasedRelease({
    stableBranchName: "main",
 
    conventionalChangelogWriterContext: {

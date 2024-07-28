@@ -22,9 +22,9 @@ The branch name to switch to.
 ### Example
 
 ```js
-const { GitSwitchBranchCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GitSwitchBranchCommand({
+const command = new Commands.GitSwitchBranchCommand({
   branchName: "some-branch-name",
 });
 ```

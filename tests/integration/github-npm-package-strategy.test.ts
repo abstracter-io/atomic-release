@@ -22,10 +22,10 @@ class GitClientStub extends SDK.GitExecaClient {
     super({ workingDirectory: process.cwd() });
   }
 
-  cliVersion = vitest.fn();
   refHash = vitest.fn();
   refName = vitest.fn();
   commits = vitest.fn();
+  cliVersion = vitest.fn();
   mergedTags = vitest.fn();
   remoteTagHash = vitest.fn();
   remoteBranchHash = vitest.fn();
@@ -60,7 +60,7 @@ const strategyConfig = (): SDK.GithubNpmPackageStrategyConfig => {
   };
 };
 
-describe("npm package strategy", () => {
+describe("github npm package strategy", () => {
   let release: SDK.Release;
   let strategy: SDK.Strategy;
   let gitClient: GitClientStub;
@@ -68,7 +68,7 @@ describe("npm package strategy", () => {
   beforeEach(async () => {
     gitClient = new GitClientStub();
 
-    release = await SDK.gitSemanticRelease({
+    release = await SDK.gitTagBasedRelease({
       gitClient,
       ...releaseConfig(),
     });
@@ -131,7 +131,7 @@ describe("npm package strategy", () => {
   test("commands state", async () => {
     const strategy = await SDK.githubNpmPackageStrategy({
       gitClient,
-      release: await SDK.gitSemanticRelease({
+      release: await SDK.gitTagBasedRelease({
         gitClient,
         ...releaseConfig(),
         logger: NOOP_LOGGER,

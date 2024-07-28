@@ -4,14 +4,14 @@ An abstract class with a method to expand github URLs and perform HTTP requests 
 
 ### Options
 
-This class accpets the same options as [HttpCommand](http-command.md)
+This class accepts the same options as [HttpCommand](http-command.md)
 
 ### Example
 
 ```js
-const { GithubHttpCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-class ExampleGithubHttpCommand extends GithubHttpCommand {
+class ExampleGithubHttpCommand extends Commands.GithubHttpCommand {
    async do() {
     const url = this.expendURL("https://api.github.com/{owner}/{repo}", {
       owner: "abstracter-io",

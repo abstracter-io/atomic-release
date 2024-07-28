@@ -9,8 +9,8 @@ A strategy is an object with two key methods, "getCommands" which provides an ar
   
 ##### logger*
 
-Type: [Logger](ports/logger.md)  
-Default: [processStdoutLogger](/src/adapters/process-stdout-logger/process-stdout-logger.ts)
+Type: [Logger](./logger.md)  
+Default: [processStdoutLogger](/src/sdk/process-stdout-logger.ts)
 
 ##### release
 
@@ -21,10 +21,9 @@ Type: [Release](ports/release.md)
 Here's an example showing how to create a strategy:
 
 ```js
-const { Strategy } = require("@abstracter/atomic-release");
-const { FileWriterCommand } = require("@abstracter/atomic-release/commands/file-writer-command");
+const { SDK, Commands } = require("@abstracter/atomic-release");
 
-class MyCustomStrategy extends Strategy {
+class MyCustomStrategy extends SDK.Strategy {
   shouldRun() {
     // return value is a promise to a boolean
     return new Promise((resolve) => {
@@ -39,7 +38,7 @@ class MyCustomStrategy extends Strategy {
   async getCommands() {
       const commands = [];
   
-      commands.push(new FileWriterCommand({
+      commands.push(new Commands.FileWriterCommand({
         create: true,
         mode: "replace",
         absoluteFilePath: `${process.cwd()}/next-version.txt",
@@ -56,5 +55,5 @@ const strategy = new MyCustomStrategy({ release, logger });
 // Run the strategy: (an error in any of the strategy commands will roll back previous commands by executing their "undo" method)
 strategy.run().catch((e) => {
   console.error("Oh snap");
-})
+});
 ```

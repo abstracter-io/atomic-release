@@ -46,9 +46,9 @@ Type: `Set`
 ### Example
 
 ```js
-const { GitCommitCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GitCommitCommand({
+const command = new Commands.GitCommitCommand({
   actor: "bot <bot@mailbox.io>",
   commitMessage: "ci: adding files generated during CI/CD",
   workingDirectory: "/home/rick.sanchez/my-awesome-node-project",

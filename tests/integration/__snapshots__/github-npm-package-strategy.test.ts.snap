@@ -5,13 +5,13 @@ exports[`npm package strategy > commands state 1`] = `
   FileWriterCommand {
     "config": {
       "absoluteFilePath": "/this/is/sparta/CHANGELOG.md",
-      "content": "## 0.1.1-beta.0 (2024-07-27)
+      "content": "## 0.1.1-beta.0 (2024-07-28)
 
 ### Features
 
 * ... ([c658ea3](https://github.com/owner/repo_name/commit/c658ea3e060490dced90dfb34c018d88b8e797f9))
 
-## 0.1.0 (2024-07-27)
+## 0.1.0 (2024-07-28)
 
 ### Features
 
@@ -37,7 +37,7 @@ exports[`npm package strategy > commands state 1`] = `
   GithubCreateReleaseCommand {
     "_fetch": [Function],
     "config": {
-      "body": "## 0.1.1-beta.0 (2024-07-27)
+      "body": "## 0.1.1-beta.0 (2024-07-28)
 
 ### Features
 

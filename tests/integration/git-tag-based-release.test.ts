@@ -60,14 +60,14 @@ const releaseOptions = () => {
   };
 };
 
-describe("git semantic release", () => {
+describe("git tag based release", () => {
   let release: SDK.Release;
   let gitClient: GitClientStub;
 
   beforeEach(async () => {
     gitClient = new GitClientStub();
 
-    release = await SDK.gitSemanticRelease({
+    release = await SDK.gitTagBasedRelease({
       gitClient,
       ...releaseOptions(),
     });
@@ -107,7 +107,7 @@ describe("git semantic release", () => {
   test("filter non release commits", async () => {
     const expectedCommit = commit();
     const isReleaseCommit = vitest.fn();
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       gitClient,
       isReleaseCommit,
       ...releaseOptions(),
@@ -209,7 +209,7 @@ describe("git semantic release", () => {
   });
 
   test("release change log is generated", async () => {
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
 
       gitClient,
@@ -336,7 +336,7 @@ describe("git semantic release", () => {
   test("previous version fallback to initial version", async () => {
     const initialVersion = "1.1.1";
 
-    release = await SDK.gitSemanticRelease({
+    release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
       initialVersion,
@@ -377,7 +377,7 @@ describe("git semantic release", () => {
 
   test("rawConventionalCommits is called with 'since' range", async () => {
     const rawConventionalCommits = vitest.fn();
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
 
       gitClient,
@@ -396,7 +396,7 @@ describe("git semantic release", () => {
 
   test("rawConventionalCommits is called with 'until' range", async () => {
     const rawConventionalCommits = vitest.fn();
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
 
       gitClient,
@@ -442,22 +442,9 @@ describe("git semantic release", () => {
     ]);
   });
 
-  test("next version fails when stable branch name is missing", async () => {
-    const release = await SDK.gitSemanticRelease({
-      ...releaseOptions(),
-      gitClient,
-      stableBranchName: undefined as never,
-    });
-    const expectedError = new Error("Stable branch name is missing");
-
-    expect(await release.getNextVersion().catch((e) => {
-      return e;
-    })).toStrictEqual(expectedError);
-  });
-
   test("previous version fails when initial version is invalid", async () => {
     const initialVersion = "v2.0";
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
       initialVersion,
@@ -477,7 +464,7 @@ describe("git semantic release", () => {
   });
 
   test("generating changelog fails when writer context is missing", async () => {
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
       conventionalChangelogWriterContext: null as never,
@@ -492,7 +479,7 @@ describe("git semantic release", () => {
   test("next version fails when a tag with the same version exists", async () => {
     const nextVersion = "1.1.0";
     const tag = { name: "v1.0.0", hash: HASH };
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
     });
@@ -530,7 +517,7 @@ describe("git semantic release", () => {
     });
 
     for (const commit of commits) {
-      const release = await SDK.gitSemanticRelease({
+      const release = await SDK.gitTagBasedRelease({
         gitClient,
         ...releaseOptions(),
       });
@@ -553,7 +540,7 @@ describe("git semantic release", () => {
   });
 
   test("next version fails when pre release branch is missing pre release id", async () => {
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
       preReleaseBranches: {},
@@ -576,7 +563,7 @@ describe("git semantic release", () => {
 
     preset.parser.headerCorrespondence = ["b", "c", "d"];
 
-    const release = await SDK.gitSemanticRelease({
+    const release = await SDK.gitTagBasedRelease({
       gitClient,
       conventionalChangelogPreset: preset,
       ...releaseOptions(),

@@ -1,6 +1,6 @@
 # GitStrategy
 
-A basic [Strategy](../strategy.md) to be used with Git.
+A basic [Strategy](./strategy.md) to be used with Git.
 
 ### Options
 
@@ -10,8 +10,8 @@ Type: `object literal`
 
 #### logger*
 
-Type: [Logger](../ports/logger.md)  
-Default: [processStdoutLogger](../adapters/process-stdout-logger.md)
+Type: [Logger](./logger.md)  
+Default: [processStdoutLogger](./process-stdout-logger.md)
 
 #### isReleaseBranch*
 
@@ -24,8 +24,8 @@ The default callback always returns `true`.
 
 #### gitClient*
 
-Type: [GitClient](../ports/git-client.md)  
-Default: [GitExecaClient](../adapters/git-execa-client.md)
+Type: [GitClient](./git-client.md)  
+Default: [GitExecaClient](./git-execa-client.md)
 
 The default client uses the process current working directory and a git remote called `origin`
 

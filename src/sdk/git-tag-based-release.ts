@@ -1,8 +1,7 @@
 import semver from "semver";
-import { ConventionalChangelogPreset } from "conventional-changelog-preset-loader";
-import conventionalChangelogPreset from "conventional-changelog-conventionalcommits";
-import { writeChangelogString, Context as ChangelogWriterContext } from "conventional-changelog-writer";
-import { Commit as ConventionalCommit, CommitParser } from "conventional-commits-parser";
+import { loadPreset } from "conventional-changelog-preset-loader";
+import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
+import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
 
 import { Logger } from "./logger";
 import { Release } from "./release";
@@ -11,16 +10,20 @@ import { GitExecaClient, MergedTag } from "./git-execa-client";
 
 import { memoize } from "../utils/memoize";
 
-type GitSemanticReleaseOptions = {
-  logger?: Logger;
+type ConventionalPreset = {
+  parser: ParserOptions;
+  writer: WriterOptions;
+  whatBump: (commits: ConventionalCommit[]) => { level: number, reason: string };
+};
 
-  gitClient?: GitExecaClient;
+type GitTagBasedReleaseConfig = {
+  logger?: Logger;
 
   remote?: string;
 
-  initialVersion?: string;
+  gitClient?: GitExecaClient;
 
-  stableBranchName: string;
+  initialVersion?: string;
 
   workingDirectory?: string;
 
@@ -32,12 +35,12 @@ type GitSemanticReleaseOptions = {
 
   isReleaseCommit?: (commit: ConventionalCommit) => boolean;
 
-  conventionalChangelogPreset?: ConventionalChangelogPreset;
+  conventionalChangelogPreset?: ConventionalPreset;
 
-  conventionalChangelogWriterContext: ChangelogWriterContext | null;
+  conventionalChangelogWriterContext: WriterContext | null;
 };
 
-type Options = Required<GitSemanticReleaseOptions>;
+type Options = Required<GitTagBasedReleaseConfig>;
 
 const sortTags = (tags: MergedTag[]): MergedTag[] => {
   return tags.sort((a, b) => {
@@ -70,13 +73,12 @@ const clean = (version: string) => {
   }
 
   return v;
-}
+};
 
-const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Options> => {
-  const stableBranchName = options.stableBranchName;
-  const workingDirectory = options.workingDirectory ?? process.cwd();
-  const remote = options.remote ?? "origin";
-  const gitClient = options.gitClient ?? new GitExecaClient({
+const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Options> => {
+  const remote = config.remote ?? "origin";
+  const workingDirectory = config.workingDirectory ?? process.cwd();
+  const gitClient = config.gitClient ?? new GitExecaClient({
     remote,
     workingDirectory,
   });
@@ -93,7 +95,6 @@ const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Optio
 
     return false;
   };
-
   const rawConventionalCommits = async (range: string) => {
     const commits = await gitClient.commits(range);
 
@@ -127,19 +128,17 @@ const defaultOptions = async (options: GitSemanticReleaseOptions): Promise<Optio
     remote,
     gitClient,
     workingDirectory,
-    stableBranchName,
-
-    logger: options.logger ?? processStdoutLogger({ name: "GitSemanticRelease" }),
-    initialVersion: options.initialVersion ?? "0.0.0",
-    preReleaseBranches: options.preReleaseBranches ?? {},
-    isReleaseCommit: options.isReleaseCommit ?? isReleaseCommit,
-    rawConventionalCommits: options.rawConventionalCommits ?? rawConventionalCommits,
-    conventionalChangelogPreset: options.conventionalChangelogPreset ?? (await conventionalChangelogPreset()),
-    conventionalChangelogWriterContext: options.conventionalChangelogWriterContext ?? null,
+    logger: config.logger ?? processStdoutLogger({ name: "gitConventionalRelease" }),
+    initialVersion: config.initialVersion ?? "0.0.0",
+    preReleaseBranches: config.preReleaseBranches ?? {},
+    isReleaseCommit: config.isReleaseCommit ?? isReleaseCommit,
+    rawConventionalCommits: config.rawConventionalCommits ?? rawConventionalCommits,
+    conventionalChangelogPreset: config.conventionalChangelogPreset ?? (await loadPreset("conventionalcommits")),
+    conventionalChangelogWriterContext: config.conventionalChangelogWriterContext ?? null,
   };
 };
 
-const bumpLevelToType = (level: number): string => {
+const presetBumpLevelToSemanticComponent = (level: number): string => {
   if (level === 0) {
     return 'major';
   }
@@ -155,25 +154,24 @@ const bumpLevelToType = (level: number): string => {
   throw new Error(`unexpected level: ${level}`);
 };
 
-const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<Release> => {
+const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Release> => {
   const memo = memoize();
-  const { logger, ...opt } = await defaultOptions(options);
+  const { logger, ...opt } = await defaultConfig(config);
   const preset = opt.conventionalChangelogPreset;
   const gitClient = opt.gitClient;
   const commitParser = new CommitParser(preset.parser);
+  const branchName = await gitClient.refName("HEAD");
+  const preReleaseId = opt.preReleaseBranches[branchName];
 
   // Private methods
   // ================
-  const getBranchName = () => {
-    return memo("branch_name", async () => {
-      return gitClient.refName("HEAD");
-    });
+  const parseCommit = async (rawConventionalCommit: string): Promise<ConventionalCommit> => {
+    return commitParser.parse(rawConventionalCommit);
   };
 
   const getMergedTags = async (): Promise<MergedTag[]> => {
     return memo("tags", async () => {
       const mergedHeadTags = await gitClient.mergedTags("HEAD");
-      const preReleaseId = await getPreReleaseId();
       const stableTags: MergedTag[] = [];
       const branchTags: MergedTag[] = [];
       const filteredTags: MergedTag[] = [];
@@ -203,37 +201,10 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
     });
   };
 
-  const getPreReleaseId = async (): Promise<string | undefined> => {
-    return memo("pre_release_id", async () => {
-      if (opt.stableBranchName) {
-        const branchName = await getBranchName();
-        const preReleaseId = opt.preReleaseBranches[branchName];
-
-        if (branchName === opt.stableBranchName) {
-          return undefined;
-        }
-
-        if (preReleaseId) {
-          return preReleaseId;
-        }
-        //
-
-        throw new Error(`Could not find pre release id for branch '${branchName}'`);
-      }
-
-      throw new Error("Stable branch name is missing");
-    });
-  };
-
-  const parseCommit = async (rawConventionalCommit: string): Promise<ConventionalCommit> => {
-    return commitParser.parse(rawConventionalCommit);
-  };
-
   const getConventionalCommits = async (): Promise<ConventionalCommit[]> => {
     return memo("conventional_commits", async () => {
       const tags = await getMergedTags();
       const until = await gitClient.refHash("HEAD");
-
       const since = tags[0]?.hash;
       const range = since ? `${since}..` : until;
       const commits = await opt.rawConventionalCommits(range);
@@ -249,6 +220,9 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
     });
   };
 
+  // FIXME:
+  //  This is overly complicated, given two tags, extract the commits
+  //  between them, fetch their info, parse them and assign them to the <version, commits> dictionary
   const getAllVersionsConventionalCommits = async (): Promise<{ [version: string]: ConventionalCommit[] }> => {
     return memo("versions_conventional_commits", async () => {
       const tags = await getMergedTags();
@@ -261,6 +235,8 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
         const hashIndices = new Map<string, number>();
 
         for (let i = 0; i < rawConventionalCommits.length; i++) {
+          // 123, 1
+          // 456, 2
           hashIndices.set(rawConventionalCommits[i].hash, i);
         }
 
@@ -268,7 +244,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
           const tag = tags[i];
           const conventionalCommits: ConventionalCommit[] = [];
 
-          let j = hashIndices.get(tag.hash);
+          let j = hashIndices.get(tag.hash); // 2
 
           /* istanbul ignore if */
           if (j === undefined) {
@@ -294,7 +270,7 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
     });
   };
 
-  const getChangelogWriterContext = (): ChangelogWriterContext => {
+  const getChangelogWriterContext = (): WriterContext<any> => {
     if (opt.conventionalChangelogWriterContext) {
       return opt.conventionalChangelogWriterContext;
     }
@@ -322,16 +298,19 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
         ...getChangelogWriterContext(),
         version: nextVersion,
       };
-      const changelog = await writeChangelogString(commits, context, preset.writer);
 
-      return changelog;
+      return writeChangelogString(commits, context, preset.writer).then(c => {
+        return c;
+      });
     });
   };
 
   const getNextVersion = async (): Promise<string> => {
     return memo<Promise<string>>("next_version", async () => {
-      const previousVersion = await getPreviousVersion();
-      const conventionalCommits = await getConventionalCommits();
+      const [previousVersion, conventionalCommits] = await Promise.all([
+        getPreviousVersion(),
+        getConventionalCommits(),
+      ]);
       const releaseCommits = conventionalCommits.filter(opt.isReleaseCommit);
       const totalFiltered = conventionalCommits.length - releaseCommits.length;
 
@@ -340,26 +319,44 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
       totalFiltered && logger.info(`Filtered ${totalFiltered} commit${totalFiltered > 1 ? "s" : ""}`);
 
       if (releaseCommits.length) {
-        const preReleaseId = await getPreReleaseId();
         const bump = preset.whatBump(releaseCommits);
-        const type = bumpLevelToType(bump.level);
+        const type = presetBumpLevelToSemanticComponent(bump.level);
         const next = inc(previousVersion, type, preReleaseId);
         const name = `v${next}`;
         const hash = await gitClient.remoteTagHash(name);
 
-        logger.info(bump.reason);
-
         if (hash) {
-          logger.warn(`Version ${next} was already released. (tag: ${name})`);
+          logger.warn(`A tag named '${name}' already exists.`);
+
           logger.warn(`You can fix this by branching from ${hash}`);
 
-          throw new Error(`A tag for version '${next}' already exists (tag hash: ${hash})`);
+          throw new Error('Tag already exists in remote.');
         }
+
+        logger.info(bump.reason);
 
         return next;
       }
 
       return previousVersion;
+    });
+  };
+
+  const getPreviousVersion = async (): Promise<string> => {
+    return memo("previous_version", async () => {
+      const versions = await getVersions();
+
+      if (versions.length) {
+        return versions[0];
+      }
+
+      logger.info(`Could not find a previous version. Will use ${opt.initialVersion} as initial version`);
+
+      if (!semver.valid(opt.initialVersion)) {
+        throw new Error(`${opt.initialVersion} is not a semantic version`);
+      }
+
+      return opt.initialVersion;
     });
   };
 
@@ -382,24 +379,10 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
     });
   };
 
-  const getPreviousVersion = async (): Promise<string> => {
-    return memo("previous_version", async () => {
-      const versions = await getVersions();
-
-      if (versions.length) {
-        return versions[0];
-      }
-
-      logger.info(`Could not find a previous version. Will use ${opt.initialVersion} as initial version`);
-
-      if (!semver.valid(opt.initialVersion)) {
-        throw new Error(`${opt.initialVersion} is not a semantic version`);
-      }
-
-      return opt.initialVersion;
-    });
-  };
-
+  // FIXME:
+  //  getAllVersionsConventionalCommits is too much
+  //  export a method for a retrieving specific version commits
+  //  > getVersionConventionalCommits(version)
   const getChangelogByVersion = async (version: string): Promise<string> => {
     return memo(`changelog_${version}`, async () => {
       const versionsConventionalCommits = await getAllVersionsConventionalCommits();
@@ -430,4 +413,4 @@ const gitSemanticRelease = async (options: GitSemanticReleaseOptions): Promise<R
   };
 };
 
-export { gitSemanticRelease, GitSemanticReleaseOptions };
+export { gitTagBasedRelease, GitTagBasedReleaseConfig };

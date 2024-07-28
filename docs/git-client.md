@@ -89,7 +89,6 @@ interface GitClient {
    */  
   mergedTags(ref: string): Promise<MergedTag[]>;
 
-  
   /**
    * @param tagName - The tag name to get the remote hash for
    *
@@ -118,4 +117,4 @@ interface GitClient {
 }
 ```
 
-See [GitExecaClient](../adapters/git-execa-client.md) for a reference implementation
+See [GitExecaClient](./git-execa-client.md) for a reference implementation

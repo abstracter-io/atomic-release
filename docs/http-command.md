@@ -20,9 +20,9 @@ Default: `node built-in fetch`
 ### Example
 
 ```js
-const { HttpCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-class ExampleHttpCommand extends HttpCommand {
+class ExampleHttpCommand extends Commands.HttpCommand {
   async do() {
     await this.fetch("https://api.github.com", {
       method: "HEAD",

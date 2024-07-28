@@ -45,11 +45,11 @@ Use `true` only when the registry allows publishing the same version again.
 ### Example
 
 ```js
-const { NpmPublishPackageCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new NpmPublishPackageCommand({
+const command = new Commands.NpmPublishPackageCommand({
   tag: "beta", // i.e. npm install <packageName>@beta
-  registry: "https://npm.evil-corp.com"
+  registry: "https://npm.evil-corp.com",
   undoPublish: false,
   workingDirectory: "/absolute/path", // package.json should be inside
 });

@@ -17,14 +17,22 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
 
+    "baseUrl": ".",
     "paths": {
-      "@abstracter/atomic-release/*": ["./src/*"]
+      "conventional-commits-parser": [
+        "node_modules/conventional-commits-parser/dist",
+      ],
+      "conventional-changelog-writer": [
+        "node_modules/conventional-changelog-writer/dist"
+      ],
+      "conventional-changelog-preset-loader": [
+        "node_modules/conventional-changelog-preset-loader/dist"
+      ]
     },
   },
 
   "include": [
     "src",
-    "node_modules/conventional-changelog-conventionalcommits/index.d.ts"
   ],
 
   "exclude": [

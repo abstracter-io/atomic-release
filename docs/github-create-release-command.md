@@ -46,9 +46,9 @@ An array of object literals where each object is an asset to upload to the relea
 ### Example
 
 ```js
-const { GithubCreateReleaseCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GithubCreateReleaseCommand({
+const command = new Commands.GithubCreateReleaseCommand({
   owner: "abstracter-io",
   repo: "atomic-release",
   tagName: "v2.0.1",

@@ -1,6 +1,6 @@
 const { PACKAGE_ROOT, PROJECT_ROOT } = require("./constants");
 const { GithubNpmPackageStrategy } = require("../build/compiled/strategies");
-const { gitSemanticRelease } = require("../build/compiled/adapters/git-semantic-release");
+const { gitConventionalRelease } = require("../build/compiled/adapters/git-semantic-release");
 
 const github = {
   owner: "abstracter-io",
@@ -12,7 +12,7 @@ const betaBranchName = "beta";
 const stableBranchName = "main";
 
 const createRelease = () => {
-  return gitSemanticRelease({
+  return gitConventionalRelease({
     stableBranchName,
 
     workingDirectory: PROJECT_ROOT,

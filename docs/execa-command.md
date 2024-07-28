@@ -22,9 +22,9 @@ Type: `string`
 ### Example
 
 ```js
-const { ExecaCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-class MoveCommand extends ExecCommand {
+class MoveCommand extends Commands.ExecCommand {
   async do() {
     await this.execa("mv", ["a", "b"]);
   }

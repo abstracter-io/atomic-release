@@ -4,19 +4,19 @@ A [Strategy](../strategy.md) to publish NPM packages source controlled in Github
 
 This strategy will:
 
-* Create a Git tag named after the next version using [GitTagCommand](../commands/git-tag-command.md)
-* Switch to a temporary branch using [GitSwitchBranchCommand](../commands/git-switch-branch-command.md)
-* Generate a changelog and store it into a file using [FileWriterCommand](../commands/file-writer-command.md)
-* Bump the package.json version property to the next version using [NpmBumpPackageVersionCommand](../commands/npm-bump-package-version-command.md)
-* Commit the generated changelog using [GitCommitCommand](../commands/git-commit-command.md)
-* Push changelog changes using [GitPushBranchCommand](../commands/git-push-branch-command.md)
-* Switch to back to the initial branch using [GitSwitchBranchCommand](../commands/git-switch-branch-command.md)
-* Create a Github pull request to merge release changes using [GithubCreatePullRequestCommand](../commands/github-create-pull-request-command.md)
-* Create a Github release using [GithubCreateReleaseCommand](../commands/github-create-release-command.md)
-* Comment on Github issues mentioned in the the release commits using [GithubCreateIssueCommentsCommand](../commands/github-create-issue-comments-command.md)
-* Publish the package to an npm registry using [NpmPublishPackageCommand](../commands/npm-publish-package-command.md)
+* Create a Git tag named after the next version using [GitTagCommand](./git-tag-command.md)
+* Switch to a temporary branch using [GitSwitchBranchCommand](./git-switch-branch-command.md)
+* Generate a changelog and store it into a file using [FileWriterCommand](./file-writer-command.md)
+* Bump the package.json version property to the next version using [NpmBumpPackageVersionCommand](./npm-bump-package-version-command.md)
+* Commit the generated changelog using [GitCommitCommand](./git-commit-command.md)
+* Push changelog changes using [GitPushBranchCommand](./git-push-branch-command.md)
+* Switch to back to the initial branch using [GitSwitchBranchCommand](./git-switch-branch-command.md)
+* Create a Github pull request to merge release changes using [GithubCreatePullRequestCommand](./github-create-pull-request-command.md)
+* Create a Github release using [GithubCreateReleaseCommand](./github-create-release-command.md)
+* Comment on Github issues mentioned in the the release commits using [GithubCreateIssueCommentsCommand](./github-create-issue-comments-command.md)
+* Publish the package to an npm registry using [NpmPublishPackageCommand](./npm-publish-package-command.md)
 
-![demo](../assets/github-npm-strategy-fail-demo.gif)
+![demo](./github-npm-strategy-fail-demo.gif)
 
 ### Options
 
@@ -131,8 +131,7 @@ Type: `object literal`
 ### Example
 
 ```js
-const { GithubNpmPackageStrategy } = require("@abstracter/atomic-release/strategies");
-const { gitSemanticRelease } = require("@abstracter/atomic-release/adapters/git-semantic-release");
+const { SDK } = require("@abstracter/atomic-release");
 
 const github = {
   owner: "abstracter-io",
@@ -143,7 +142,7 @@ const github = {
 const stableBranchName = "main";
 
 const createRelease = () => {
-  return gitSemanticRelease({
+  return gitTagBasedRelease({
     stableBranchName,
 
     workingDirectory: process.cwd(),
@@ -162,7 +161,7 @@ const createRelease = () => {
 };
 
 const createStrategy = (release) => {
-  return new GithubNpmPackageStrategy({
+  return new SDK.githubNpmPackageStrategy({
     release,
 
     remote: "origin",

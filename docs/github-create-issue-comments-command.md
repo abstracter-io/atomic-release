@@ -27,9 +27,9 @@ An array of object literals where each object is an issue number and the comment
 ### Example
 
 ```js
-const { GithubCreateIssueCommentsCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GithubCreateIssueCommentsCommand({
+const command = new Commands.GithubCreateIssueCommentsCommand({
   owner: "abstracter-io",
 
   repo: "atomic-release",

@@ -37,9 +37,9 @@ Type: `string`
 ### Example
 
 ```js
-const { GithubCreatePullRequestCommand } = require("@abstracter/atomic-release/commands");
+const { Commands } = require("@abstracter/atomic-release");
 
-const command = new GithubCreatePullRequestCommand({
+const command = new Commands.GithubCreatePullRequestCommand({
   head: "v123-generated-files",
   base: "main",
   repo: "atomic-release",

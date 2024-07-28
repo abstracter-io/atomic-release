@@ -20,9 +20,9 @@ Here's an example showing how to create a command:
 
 ```js
 const fs = require("fs");
-const { Command } = require("@abstracter/atomic-release");
+const { SDK } = require("@abstracter/atomic-release");
 
-class CreateFolderCommand extends Command {
+class CreateFolderCommand extends SDK.Command {
     constructor(options) {
         super(options);
         
