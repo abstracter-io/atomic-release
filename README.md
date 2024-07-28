@@ -19,7 +19,7 @@ Atomic Release is an SDK to help automate a software release process with the ab
 
 Find out more by reading the [docs](docs)
 
-> 💡 &nbsp; Fun fact: This library is released using GithubNpmPackageStrategy. [See example](scripts/atomic-release.js)
+> 💡 &nbsp; Fun fact: This library is released using githubNpmPackageStrategy. [See example](scripts/atomic-release.js)
 
 ## Install
 
