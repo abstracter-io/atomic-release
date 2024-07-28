@@ -1,8 +1,6 @@
 # Release
 
-An interface ("port") for providing information needed to perform a release.
-
-The interface defines the following methods:
+An interface describing the API needed by the SDK when perform a release.
 
 ```ts
 interface Release {

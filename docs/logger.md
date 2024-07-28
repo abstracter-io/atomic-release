@@ -1,6 +1,6 @@
 # Logger
 
-An interface ("port") that outputs messages logged by the SDK depending on the log level.
+An interface describing the logger API used by the SDK.
 
 ### Creating a Custom Logger
 

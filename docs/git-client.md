@@ -1,8 +1,6 @@
 # GitClient
 
-An interface ("port") with methods that provides common data needed by the SDK.
-
-The interface defines the following methods:
+An interface describing the API needed by the SDK.
 
 ```ts
 interface GitClient {
