@@ -14,7 +14,7 @@ Default: [processStdoutLogger](/src/sdk/process-stdout-logger.ts)
 
 ##### release
 
-Type: [Release](ports/release.md)
+Type: [Release](./release.md)
 
 ### Creating a Custom Strategy
 

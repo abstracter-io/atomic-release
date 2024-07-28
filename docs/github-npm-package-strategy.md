@@ -1,6 +1,6 @@
-# GithubNpmPackageStrategy
+# githubNpmPackageStrategy
 
-A [Strategy](../strategy.md) to publish NPM packages source controlled in Github.
+A [Strategy](./strategy.md) to publish NPM packages source controlled in GitHub.
 
 This strategy will:
 
@@ -26,12 +26,12 @@ Type: `object literal`
 
 #### logger*
 
-Type: [Logger](../ports/logger.md)  
-Default: [processStdoutLogger](../adapters/process-stdout-logger.md)
+Type: [Logger](./logger.md)  
+Default: [processStdoutLogger](./process-stdout-logger.md)
 
 #### release
 
-Type: [Release](../ports/release.md)  
+Type: [Release](./release.md)  
 
 #### remote*
 
@@ -40,8 +40,8 @@ Default: `origin`
 
 #### gitClient*
 
-Type: [GitClient](../ports/git-client.md)  
-Default: [GitExecaClient](../adapters/git-execa-client.md)
+Type: [GitClient](./git-client.md)  
+Default: [GitExecaClient](./git-execa-client.md)
 
 #### gitActor*
 

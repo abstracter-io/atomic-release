@@ -11,8 +11,8 @@ Type: `object literal`
 
 ##### logger*
 
-Type: [Logger](ports/logger.md)  
-Default: [processStdoutLogger](adapters/process-stdout-logger.md)
+Type: [Logger](./logger.md)  
+Default: [processStdoutLogger](./process-stdout-logger.md)
 
 ### Creating a Custom Command
 
