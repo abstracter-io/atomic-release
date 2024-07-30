@@ -1,11 +1,13 @@
 {
   "name": "@abstracter/atomic-release",
-  "version": "0.1.0",
+  "version": "1.3.0",
   "description": "Automated atomic release using the command pattern.",
   "private": false,
-  "type": "commonjs",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
+  "type": "module",
+  "exports": {
+    "types": "build/index.d.ts",
+    "default": "build/index.js"
+  },
   "files": [
     "build/**",
     "CHANGELOG.md",
@@ -74,6 +76,7 @@
     "parse-author": "^2.0.0",
     "pretty-ms": "^9.1.0",
     "radash": "^12.1.0",
+    "read-package-up": "^11.0.0",
     "semver": "^7.6.3",
     "uri-templates": "^0.2.0"
   }

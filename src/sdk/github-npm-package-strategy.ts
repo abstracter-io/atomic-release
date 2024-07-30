@@ -1,4 +1,7 @@
-// import { readPackageUp } from 'read-package-up';
+import path from 'node:path';
+import { memo } from 'radash';
+import parseGitHubURL from 'parse-github-url';
+import { readPackageUp } from 'read-package-up';
 
 import { Logger } from "./logger";
 import { Release } from "./release";
@@ -23,7 +26,7 @@ type GithubNpmPackageStrategyConfig = {
 };
 
 const createRelease = async () => {
-  const url = await getParsedGithubURL()
+  const githubUrl = await getParsedGithubURL();
 
   return gitTagBasedRelease({
     preReleaseBranches: {
@@ -32,31 +35,44 @@ const createRelease = async () => {
     },
 
     conventionalChangelogWriterContext: {
-      host: 'https://github.com',
-      owner: url.owner, // always owner
-      repository: url.repo, // always name,
-      repoUrl: url.full_url,
+      host: `https://${githubUrl.host}`,
+      owner: githubUrl.repoOwner,
+      repoUrl: githubUrl.httpsURL,
+      repository: githubUrl.repoName,
     },
   });
 };
 
-// use find-package-up + memoize
-const getPackageJson = async () => {
-  return { path: '' }
-};
+const getPackageJson = memo(async () => {
+  const pkg = await readPackageUp();
 
-const getParsedGithubURL = async () => {
-  const packageJson = { repository: { url: '' } }
+  if (pkg) {
+    return {
+      packageJson: pkg.packageJson,
+      folderPath: path.dirname(pkg.path)
+    };
+  }
+
+  throw new Error('could not find package.json');
+});
+
+const getParsedGithubURL = memo(async () => {
+  const { packageJson } = await getPackageJson();
   const url = packageJson.repository?.url;
 
-  return {
-    repo: '',
-    owner: '',
-    full_url: ''
-  };
+  if (url) {
+    const parsed = parseGitHubURL(url);
 
-  // throw new Error('Invalid Git URL');
-};
+    return {
+      host: parsed.host,
+      repoName: parsed.name,
+      repoOwner: parsed.owner,
+      httpsURL: `https://${parsed.host}/${parsed.owner}/${parsed.name}`,
+    };
+  }
+
+  throw new Error('repo url is missing');
+});
 
 const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig = {}) => {
   const pkg = await getPackageJson();
@@ -68,7 +84,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
     gitClient: config.gitClient ?? new GitExecaClient(), // TODO: This should be wrapped by a cache?
     gitRemote: config.gitRemote ?? 'origin',
     workingDirectory: config.workingDirectory ?? process.cwd(),
-    changelogFilePath: config.changelogFilePath ?? `${pkg.path}/CHANGELOG.md`,
+    changelogFilePath: config.changelogFilePath ?? `${pkg.folderPath}/CHANGELOG.md`,
     releaseBranchNames: config.releaseBranchNames ?? new Set(['main', 'beta', 'alpha']),
     githubPersonalAccessToken: config.githubPersonalAccessToken ?? process.env.GITHUB_PAT_TOKEN,
   })
@@ -121,7 +137,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
       config.release.getMentionedIssues(),
       config.release.getNextVersion().then(name => `v${name}`)
     ]);
-    const releaseURL = `https://github.com/${githubUrl.owner}/${githubUrl.repo}/releases/tag/${versionName}`;
+    const releaseURL = `${githubUrl.httpsURL}/releases/tag/${versionName}`;
     const comments: Array<{ issueNumber: number, commentBody: string }> = [];
 
     for (const issue of issues) {
@@ -137,9 +153,9 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
     }
 
     return new Commands.GithubCreateIssueCommentsCommand({
-      repo: githubUrl.repo,
-      owner: githubUrl.owner,
       logger: config.logger,
+      repoName: githubUrl.repoName,
+      repoOwner: githubUrl.repoOwner,
       issueComments: comments,
       headers: {
         Authorization: `token ${config.githubPersonalAccessToken}`,

@@ -8,10 +8,8 @@ type IssueComment = {
 };
 
 type GithubCreateIssueCommentsCommandConfig = GithubHttpCommandConfig & {
-  repo: string;
-
-  owner: string;
-
+  repoName: string;
+  repoOwner: string;
   issueComments: IssueComment[];
 };
 
@@ -37,11 +35,11 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
   private readonly createdCommentsResources: CommentRestResource[] = [];
 
   private async createComment(issueComment: IssueComment): Promise<Response | null> {
-    const { owner, repo } = this.config;
+    const { repoOwner, repoName } = this.config;
     const { issueNumber, commentBody } = issueComment;
     const url = this.expendURL("https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/comments", {
-      owner,
-      repo,
+      owner: repoOwner,
+      repo: repoName,
       issueNumber,
     });
     const response = await this.fetch(url, {
@@ -71,10 +69,10 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
   }
 
   private async deleteComment(commentResource: CommentRestResource): Promise<void> {
-    const { owner, repo } = this.config;
+    const { repoOwner, repoName } = this.config;
     const url = this.expendURL("https://api.github.com/repos/{owner}/{repo}/issues/comments/{commentId}", {
-      owner,
-      repo,
+      repo: repoName,
+      owner: repoOwner,
       commentId: commentResource.id as string,
     });
     const response = await this.fetch(url, {

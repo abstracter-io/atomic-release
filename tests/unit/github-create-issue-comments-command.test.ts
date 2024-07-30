@@ -13,8 +13,8 @@ const CMD_CONFIG: Commands.GithubCreateIssueCommentsCommandConfig = {
   logger: LOGGER,
   fetch,
 
-  owner: "nintendo",
-  repo: "super-mario",
+  repoOwner: "nintendo",
+  repoName: "super-mario",
 
   issueComments: [],
 
@@ -34,15 +34,15 @@ describe("comment in github issues", () => {
   const CREATED_COMMENT_ID = Date.now();
   const URL_TEMPLATES = {
     CREATE_COMMENT: uriTemplates(
-      `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/issues/{issueNumber}/comments`,
+      `https://api.github.com/repos/${CMD_CONFIG.repoOwner}/${CMD_CONFIG.repoName}/issues/{issueNumber}/comments`,
     ),
 
     CREATED_COMMENT_HTML: uriTemplates(
-      `https://github.com/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pull/{issueNumber}#issuecomment-${CREATED_COMMENT_ID}`,
+      `https://github.com/${CMD_CONFIG.repoOwner}/${CMD_CONFIG.repoName}/pull/{issueNumber}#issuecomment-${CREATED_COMMENT_ID}`,
     ),
 
     // Cutting corners... not really a template
-    DELETE_COMMENT: `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/issues/comments/${CREATED_COMMENT_ID}`,
+    DELETE_COMMENT: `https://api.github.com/repos/${CMD_CONFIG.repoOwner}/${CMD_CONFIG.repoName}/issues/comments/${CREATED_COMMENT_ID}`,
   };
 
   beforeEach(() => {
@@ -74,8 +74,8 @@ describe("comment in github issues", () => {
 
     for (const issueComment of issueComments) {
       const expectedURL = URL_TEMPLATES.CREATE_COMMENT.fill({
-        owner: CMD_CONFIG.owner,
-        repo: CMD_CONFIG.repo,
+        repo: CMD_CONFIG.repoName,
+        owner: CMD_CONFIG.repoOwner,
         issueNumber: issueComment.issueNumber,
       });
       const resourceURL = URL_TEMPLATES.CREATED_COMMENT_HTML.fill({
