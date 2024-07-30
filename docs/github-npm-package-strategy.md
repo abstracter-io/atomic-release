@@ -4,7 +4,7 @@ A [Strategy](./strategy.md) to publish NPM packages source controlled in GitHub.
 
 This strategy will:
 
-* Generate a changelog and store it prepend it to a file using [FileWriterCommand](./file-writer-command.md)
+* Generate a changelog and prepend it to the changelog file using [FileWriterCommand](./file-writer-command.md)
 * Create a GitHub release using [GithubCreateReleaseCommand](./github-create-release-command.md)
 * Comment on GitHub issues mentioned in the release commits using [GithubCreateIssueCommentsCommand](./github-create-issue-comments-command.md)
 * Bump the package.json version property to the next version using [NpmBumpPackageVersionCommand](./npm-bump-package-version-command.md) 
