@@ -26,7 +26,7 @@ type GithubNpmPackageStrategyConfig = {
 };
 
 const createRelease = async () => {
-  const githubUrl = await getParsedGithubURL();
+  const githubUrl = await getParsedGitHubURL();
 
   return gitTagBasedRelease({
     preReleaseBranches: {
@@ -56,7 +56,7 @@ const getPackageJson = memo(async () => {
   throw new Error('could not find package.json');
 });
 
-const getParsedGithubURL = memo(async () => {
+const getParsedGitHubURL = memo(async () => {
   const { packageJson } = await getPackageJson();
   const url = packageJson.repository?.url;
 
@@ -132,7 +132,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
   });
 
   strategy.addCommandProvider(async (config) => {
-    const githubUrl = await getParsedGithubURL();
+    const githubUrl = await getParsedGitHubURL();
     const [issues, versionName] = await Promise.all([
       config.release.getMentionedIssues(),
       config.release.getNextVersion().then(name => `v${name}`)
