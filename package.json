@@ -49,6 +49,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
+    "@commitlint/cz-commitlint": "^19.2.0",
     "commitizen": "^4.3.0",
     "copyfiles": "^2.4.1",
     "cz-conventional-changelog": "^3.3.0",
@@ -70,8 +71,6 @@
     "conventional-commits-parser": "^6.0.0",
     "execa": "^4.0.3",
     "fetch-defaults": "^1.0.0",
-    "get-stream": "^9.0.1",
-    "into-stream": "^8.0.1",
     "mime": "^4.0.4",
     "parse-author": "^2.0.0",
     "pretty-ms": "^9.1.0",
