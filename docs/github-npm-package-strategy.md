@@ -88,7 +88,7 @@ Default: `process.env.GITHUB_PAT_TOKEN`
 
 The token to use when interacting with GitHub REST API  
 
-> ℹ️ &nbsp; [GitStrategy](git-strategy.md) options are also applicable.
+[GitStrategy](git-strategy.md) options are also applicable.
 
 ### Example
 
