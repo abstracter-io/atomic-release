@@ -2,7 +2,7 @@
 
 A github command that comments in github issues.
 
-### Options
+### Config
 
 Type: `object literal`
 

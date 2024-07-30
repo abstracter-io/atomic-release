@@ -2,7 +2,7 @@
 
 An abstract class with a method to perform http requests with pre-defined headers using [fetchDefaults](https://github.com/moll/js-fetch-defaults).
 
-### Options
+### Config
 
 Type: `object literal`
 

@@ -2,7 +2,7 @@
 
 An abstract class with a method to execute a subprocess using [execa](https://github.com/sindresorhus/execa).
 
-### Options
+### Config
 
 Type: `object literal`
 

@@ -2,7 +2,7 @@
 
 A command that updates the version property in a `package.json` file.
 
-### Options
+### Config
 
 Type: `object literal`
 

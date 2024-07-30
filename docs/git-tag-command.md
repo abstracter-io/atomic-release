@@ -2,7 +2,7 @@
 
 A git command to create a local/remote tag.
 
-### Options
+### Config
 
 Type: `object literal`
 

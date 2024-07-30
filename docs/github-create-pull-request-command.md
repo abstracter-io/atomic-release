@@ -2,7 +2,7 @@
 
 A github command that creates a pull request.
 
-### Options
+### Config
 
 Type: `object literal`
 

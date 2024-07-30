@@ -2,7 +2,7 @@
 
 A command to update a text file content / create file
 
-### Options
+### Config
 
 Type: `object literal`
 

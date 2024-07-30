@@ -22,6 +22,24 @@ type GithubNpmPackageStrategyConfig = {
   githubPersonalAccessToken?: string;
 };
 
+const createRelease = async () => {
+  const url = await getParsedGithubURL()
+
+  return gitTagBasedRelease({
+    preReleaseBranches: {
+      beta: 'beta',
+      alpha: 'alpha',
+    },
+
+    conventionalChangelogWriterContext: {
+      host: 'https://github.com',
+      owner: url.owner, // always owner
+      repository: url.repo, // always name,
+      repoUrl: url.full_url,
+    },
+  });
+};
+
 // use find-package-up + memoize
 const getPackageJson = async () => {
   return { path: '' }
@@ -40,30 +58,12 @@ const getParsedGithubURL = async () => {
   // throw new Error('Invalid Git URL');
 };
 
-const createSemanticRelease = async () => {
-  const url = await getParsedGithubURL()
-
-  return gitTagBasedRelease({
-    preReleaseBranches: {
-      beta: 'beta',
-      alpha: 'alpha',
-    },
-
-    conventionalChangelogWriterContext: {
-      host: 'https://github.com',
-      owner: url.owner, // always owner
-      repository: url.repo, // always name,
-      repoUrl: url.full_url,
-    },
-  });
-};
-
 const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig = {}) => {
   const pkg = await getPackageJson();
   const strategy = new GitStrategy({
     ...config,
     logger: config.logger ?? processStdoutLogger({ name: 'GithubNpmPackageStrategy' }),
-    release: config.release ?? await createSemanticRelease(),
+    release: config.release ?? await createRelease(),
     gitActor: config.gitActor ?? process.env.RELEASE_ACTOR,
     gitClient: config.gitClient ?? new GitExecaClient(), // TODO: This should be wrapped by a cache?
     gitRemote: config.gitRemote ?? 'origin',

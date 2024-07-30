@@ -2,7 +2,7 @@
 
 An implementation of the SDK [GitClient](./git-client.md) interface using [execa](https://github.com/sindresorhus/execa).
 
-### Options
+### Config
 
 ###### Optional properties are denoted by *
 

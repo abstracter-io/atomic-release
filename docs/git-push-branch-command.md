@@ -2,7 +2,7 @@
 
 A git command to push a local branch to a git remote.
 
-### Options
+### Config
 
 Type: `object literal`
 

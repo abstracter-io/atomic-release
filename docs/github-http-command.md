@@ -2,7 +2,7 @@
 
 An abstract class with a method to expand github URLs and perform HTTP requests using the fetch API.
 
-### Options
+### Config
 
 This class accepts the same options as [HttpCommand](http-command.md)
 

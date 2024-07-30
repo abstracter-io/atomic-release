@@ -3,7 +3,7 @@
 A strategy is an object with two key methods, "getCommands" which provides an array of commands to execute and  
 "shouldRun" which decides whether to execute the strategy commands.
 
-### Options
+### Config
 
 ###### Optional properties are denoted by *
   

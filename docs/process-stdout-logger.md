@@ -2,7 +2,7 @@
 
 An implementation of the SDK [Logger](./logger.md) interface using `process.stdout`.
 
-### Options
+### Config
 
 ###### Optional properties are denoted by *
 

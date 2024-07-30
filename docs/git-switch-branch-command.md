@@ -4,7 +4,7 @@ A git command that [switches](https://git-scm.com/docs/git-switch) to a desired 
 
 > This command will create a branch in case it does not exist.
 
-### Options
+### Config
 
 Type: `object literal`
 

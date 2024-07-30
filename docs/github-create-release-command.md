@@ -2,7 +2,7 @@
 
 A github command that creates a github release.
 
-### Options
+### Config
 
 Type: `object literal`
 

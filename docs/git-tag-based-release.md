@@ -3,7 +3,7 @@
 An implementation of the SDK [Release](./release.md) interface that generates changelogs and  
 semantic versions using [conventional-changelog packages](https://git.io/JKOLR)
 
-### Options
+### Config
 
 Type: `object literal`
 

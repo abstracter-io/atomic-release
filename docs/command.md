@@ -3,7 +3,7 @@
 A command is an object with two key methods, "do" which performs an action, and "undo" which rolls back  
 any actions taken by the "do" method.
 
-### Options
+### Config
 
 ###### Optional properties are denoted by *
 

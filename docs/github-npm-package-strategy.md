@@ -4,21 +4,18 @@ A [Strategy](./strategy.md) to publish NPM packages source controlled in GitHub.
 
 This strategy will:
 
-* Create a Git tag named after the next version using [GitTagCommand](./git-tag-command.md)
-* Switch to a temporary branch using [GitSwitchBranchCommand](./git-switch-branch-command.md)
-* Generate a changelog and store it into a file using [FileWriterCommand](./file-writer-command.md)
-* Bump the package.json version property to the next version using [NpmBumpPackageVersionCommand](./npm-bump-package-version-command.md)
-* Commit the generated changelog using [GitCommitCommand](./git-commit-command.md)
-* Push changelog changes using [GitPushBranchCommand](./git-push-branch-command.md)
-* Switch to back to the initial branch using [GitSwitchBranchCommand](./git-switch-branch-command.md)
-* Create a Github pull request to merge release changes using [GithubCreatePullRequestCommand](./github-create-pull-request-command.md)
+* Generate a changelog and store it prepend it to a file using [FileWriterCommand](./file-writer-command.md)
 * Create a Github release using [GithubCreateReleaseCommand](./github-create-release-command.md)
-* Comment on Github issues mentioned in the the release commits using [GithubCreateIssueCommentsCommand](./github-create-issue-comments-command.md)
+* Comment on Github issues mentioned in the release commits using [GithubCreateIssueCommentsCommand](./github-create-issue-comments-command.md)
+* Bump the package.json version property to the next version using [NpmBumpPackageVersionCommand](./npm-bump-package-version-command.md) 
+* Create a Git tag named after the next version using [GitTagCommand](./git-tag-command.md)
+* Commit the generated changelog & changed package.json using [GitCommitCommand](./git-commit-command.md)
+* Push the commit using [GitPushBranchCommand](./git-push-branch-command.md)
 * Publish the package to an npm registry using [NpmPublishPackageCommand](./npm-publish-package-command.md)
 
 ![demo](./github-npm-strategy-fail-demo.gif)
 
-### Options
+### Config
 
 Type: `object literal`
 
@@ -29,11 +26,12 @@ Type: `object literal`
 Type: [Logger](./logger.md)  
 Default: [processStdoutLogger](./process-stdout-logger.md)
 
-#### release
+#### release*
 
 Type: [Release](./release.md)  
+Default: [git-tag-based-release](./git-tag-based-release.md)
 
-#### remote*
+#### gitRemote*
 
 Type: `string`  
 Default: `origin`
@@ -46,7 +44,7 @@ Default: [GitExecaClient](./git-execa-client.md)
 #### gitActor*
 
 Type: `string`  
-Default: `undefined`
+Default: `process.env.RELEASE_ACTOR`
 
 A short-hand to perform git commits using a specific author & committer email and name.
 
@@ -73,58 +71,24 @@ GIT_AUTHOR_EMAIL: bot@email.com
 Type: `string`  
 Default: `process.cwd()`
 
-#### packageRoot*
-
-Type: `string`  
-Default: `options.workingDirectory`
-
-The working directory to use for npm commands.
-
 #### changelogFilePath*
 
 Type: `string`  
 Default: `${workingDirectory}/CHANGELOG.md`
 
-#### regenerateChangelog*
+#### releaseBranchNames*
 
-Type: `boolean`  
-Default: `true`
+Type: `Set`  
+Default: `new Set([main, beta, alpha])`
 
-Regenerate the changelog (next and previous versions).
+Specifies the branches where the strategy will run.
 
-#### github
+#### githubPersonalAccessToken*
 
-Type: `object literal`  
+Type: `string`  
+Default: `process.env.GITHUB_PAT_TOKEN`
 
-An object literal with 3 properties:  
-
-```js
-{
-  owner: "abstracter-io",
-  repo: "atomic-release",
-  personalAccessToken: "Github personal access token with repository access"
-}
-```
-
-#### branchConfig
-
-Type: `object literal`  
-
-```js
-{
-  // config for "main" branch
-  main: {
-    isStableGithubRelease: true // Will not mark the created Github release as "pre release"
-    npmRegistryDistTag: "latest" // <-- will enable doing: npm install @abstracter/atomic-release ("latest" is the default when installing)
-  }
-
-  // config for "beta" branch
-  beta: {
-    isStableGithubRelease: false, // Will mark the created Github release as "pre release" (falsy by default)
-    npmRegistryDistTag: "unstable" // <-- will enable doing: npm install @abstracter/atomic-release@unstable
-  }
-}
-```
+The token to use when interacting with GitHub REST API  
 
 > :information_source: &nbsp; [GitStrategy](git-strategy.md) options are also applicable.
 
@@ -133,65 +97,7 @@ Type: `object literal`
 ```js
 const { SDK } = require("@abstracter/atomic-release");
 
-const github = {
-  owner: "abstracter-io",
-  repo: "atomic-release",
-  host: "https://github.com",
-};
-
-const stableBranchName = "main";
-
-const createRelease = () => {
-  return gitTagBasedRelease({
-    stableBranchName,
-
-    workingDirectory: process.cwd(),
-
-    preReleaseBranches: {
-      beta: "beta",
-    },
-
-    conventionalChangelogWriterContext: {
-      host: github.host,
-      owner: github.owner,
-      repository: github.repo,
-      repoUrl: `${github.host}//${github.owner}/${github.repo}`,
-    },
-  });
-};
-
-const createStrategy = (release) => {
-  return new SDK.githubNpmPackageStrategy({
-    release,
-
-    remote: "origin",
-
-    changelogFilePath: `${process.cwd()}/CHANGELOG.md`,
-
-    workingDirectory: process.cwd(),
-
-    regenerateChangeLog: true,
-
-    github: {
-      repo: github.repo,
-      owner: github.owner,
-      personalAccessToken: process.env.GITHUB_PAT_TOKEN,
-    },
-
-    branchConfig: {
-      [stableBranchName]: {
-        isStable: true,
-        npmRegistryDistTag: "latest",
-      },
-
-      beta: {
-        npmRegistryDistTag: "beta",
-      },
-    },
-  });
-};
-
-createRelease().then(createStrategy).then((strategy => strategy.run()));
+SDK.githubNpmPackageStrategy().then(strategy => strategy.run());
 ```
 
 

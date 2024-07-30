@@ -14,7 +14,7 @@ such a limit, there is an option called "undoPublish" that will
 control whether this command undo should "unpublish"
 ```
 
-### Options
+### Config
 
 Type: `object literal`
 

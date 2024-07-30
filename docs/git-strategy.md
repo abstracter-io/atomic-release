@@ -2,7 +2,7 @@
 
 A basic [Strategy](./strategy.md) to be used with Git.
 
-### Options
+### Config
 
 Type: `object literal`
 

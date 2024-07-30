@@ -2,7 +2,7 @@
 
 A git command that stages and commits files in a working tree.
 
-### Options
+### Config
 
 Type: `object literal`
 

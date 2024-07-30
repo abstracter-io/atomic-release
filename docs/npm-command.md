@@ -2,7 +2,7 @@
 
 An abstract class with a method to read a package.json.
 
-### Options
+### Config
 
 This class accepts the same options as [ExecaCommand](execa-command.md)
 
