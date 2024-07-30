@@ -1,6 +1,9 @@
 # GitStrategy
 
-A basic [Strategy](./strategy.md) to be used with Git.
+An extension of [Strategy](./strategy.md) to be used with Git.
+
+This strategy enhances the run conditions and runs when
+a branch name is defined as a release branch, and, the local & remote hash match.
 
 ### Config
 
@@ -8,19 +11,12 @@ Type: `object literal`
 
 ###### Optional properties are denoted by *
 
-#### logger*
+#### releaseBranchNames*
 
-Type: [Logger](./logger.md)  
-Default: [processStdoutLogger](./process-stdout-logger.md)
+Type: `Set`  
+Default: `new Set([main, beta, alpha])`
 
-#### isReleaseBranch*
-
-Type: `function`
-
-A callback which will be invoked with the current branch name, and returns a boolean indiciting  
-whether this is a release branch (`true`) or not (`false`).
-
-The default callback always returns `true`.
+Specifies the branches where the strategy will run.
 
 #### gitClient*
 
@@ -29,6 +25,8 @@ Default: [GitExecaClient](./git-execa-client.md)
 
 The default client uses the process current working directory and a git remote called `origin`
 
+[Strategy](./strategy.md) options are also applicable.
+
 ---
 
-See [GithubNpmPackageStrategy](github-npm-package-strategy.md) for a reference implementation
+See [githubNpmPackageStrategy](./github-npm-package-strategy.md) for a reference implementation

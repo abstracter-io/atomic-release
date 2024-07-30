@@ -1,59 +1,22 @@
 # Strategy
 
-A strategy is an object with two key methods, "getCommands" which provides an array of commands to execute and  
-"shouldRun" which decides whether to execute the strategy commands.
+An abstract class that covers the condition in which a strategy runs
+and the execution of the commands `do`, `undo` & `cleanup` methods.
+
+This strategy runs only when the next & previous version differ.
 
 ### Config
 
 ###### Optional properties are denoted by *
   
-##### logger*
+##### logger
 
 Type: [Logger](./logger.md)  
-Default: [processStdoutLogger](/src/sdk/process-stdout-logger.ts)
 
 ##### release
 
 Type: [Release](./release.md)
 
-### Creating a Custom Strategy
+---
 
-Here's an example showing how to create a strategy:
-
-```js
-const { SDK, Commands } = require("@abstracter/atomic-release");
-
-class MyCustomStrategy extends SDK.Strategy {
-  shouldRun() {
-    // return value is a promise to a boolean
-    return new Promise((resolve) => {
-      const day = new Date().getDay() + 1;
-      
-      // run release only in even days...
-      resolve((day % 2) === 0);
-    })
-  }
-  
-  // return value is a promise to an array of command instances (using the async keyword for brevity)
-  async getCommands() {
-      const commands = [];
-  
-      commands.push(new Commands.FileWriterCommand({
-        create: true,
-        mode: "replace",
-        absoluteFilePath: `${process.cwd()}/next-version.txt",
-        content: `Next version is ${await this.options.release.getNextVersion()}`,
-      }));
-
-      return commands;
-  }
-}
-
-// NOTE: logger and release are psudeo arguments
-const strategy = new MyCustomStrategy({ release, logger });
-
-// Run the strategy: (an error in any of the strategy commands will roll back previous commands by executing their "undo" method)
-strategy.run().catch((e) => {
-  console.error("Oh snap");
-});
-```
+See [github-npm-package-strategy](./github-npm-package-strategy.md) for a reference

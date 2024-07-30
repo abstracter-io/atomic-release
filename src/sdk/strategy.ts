@@ -15,11 +15,11 @@ type CommandProvider<T> = (config: T) => Promise<Command | null>;
 
 type CommandsCollection = (Command | null)[];
 
-abstract class Strategy<T extends StrategyConfig = StrategyConfig> {
+class Strategy<T extends StrategyConfig = StrategyConfig> {
   protected readonly config: T;
   protected readonly commandProviders: Array<CommandProvider<T>>
 
-  protected constructor(config: T) {
+  public constructor(config: T) {
     this.config = config;
     this.commandProviders = [];
   }
@@ -155,4 +155,4 @@ abstract class Strategy<T extends StrategyConfig = StrategyConfig> {
   }
 }
 
-export { StrategyConfig, Strategy };
+export { Strategy, StrategyConfig };

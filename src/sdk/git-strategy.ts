@@ -8,10 +8,6 @@ type GitStrategyOptions = StrategyConfig & {
 };
 
 class GitStrategy<T extends GitStrategyOptions = GitStrategyOptions> extends Strategy<T> {
-  public constructor(config: T) {
-    super(config);
-  }
-
   protected async shouldRun(): Promise<boolean> {
     if (await super.shouldRun()) {
       const branchName = await this.config.gitClient.refName("HEAD");

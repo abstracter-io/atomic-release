@@ -36,11 +36,6 @@ Default: [git-tag-based-release](./git-tag-based-release.md)
 Type: `string`  
 Default: `origin`
 
-#### gitClient*
-
-Type: [GitClient](./git-client.md)  
-Default: [GitExecaClient](./git-execa-client.md)
-
 #### gitActor*
 
 Type: `string`  
@@ -73,13 +68,6 @@ Default: `process.cwd()`
 
 Type: `string`  
 Default: `${workingDirectory}/CHANGELOG.md`
-
-#### releaseBranchNames*
-
-Type: `Set`  
-Default: `new Set([main, beta, alpha])`
-
-Specifies the branches where the strategy will run.
 
 #### githubPersonalAccessToken*
 
