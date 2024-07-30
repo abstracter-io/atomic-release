@@ -2,7 +2,7 @@
 
 An extension of [Strategy](./strategy.md) to be used with Git.
 
-This strategy enhances the run conditions and runs when
+This strategy enhances the run conditions and runs when  
 a branch name is defined as a release branch, and, the local & remote hash match.
 
 ### Config
