@@ -19,7 +19,6 @@ type GithubNpmPackageStrategyConfig = {
   workingDirectory?: string;
   changelogFilePath?: string;
   releaseBranchNames?: Set<string>;
-  regenerateChangelog?: boolean;
   githubPersonalAccessToken?: string;
 };
 
@@ -45,8 +44,6 @@ const createSemanticRelease = async () => {
   const url = await getParsedGithubURL()
 
   return gitTagBasedRelease({
-    stableBranchName: 'main',
-
     preReleaseBranches: {
       beta: 'beta',
       alpha: 'alpha',
@@ -78,16 +75,6 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
 
   strategy.addCommandProvider(async (config) => {
     const changelogs = [config.release.getChangelog()];
-    const regenerate = config.regenerateChangelog;
-
-    if (regenerate) {
-      const versions = await config.release.getVersions();
-
-      versions.forEach((version) => {
-        changelogs.push(config.release.getChangelogByVersion(version));
-      });
-    }
-
     const changelog = await Promise.all(changelogs).then((versions) => {
       return versions.filter(Boolean).join("\n");
     });
@@ -97,7 +84,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
         create: true,
         content: changelog,
         logger: config.logger,
-        mode: regenerate ? "replace" : "prepend",
+        mode: "prepend",
         absoluteFilePath: config.changelogFilePath,
       });
     }

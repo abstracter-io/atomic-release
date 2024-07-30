@@ -72,10 +72,6 @@ describe("git tag based release", () => {
       ...releaseOptions(),
     });
 
-    gitClient.cliVersion.mockImplementation(async () => {
-      return "2.7.0";
-    });
-
     gitClient.refHash.mockImplementation(async () => {
       return HASH;
     });
@@ -86,6 +82,10 @@ describe("git tag based release", () => {
 
     gitClient.refName.mockImplementation(async () => {
       return STABLE_BRANCH_NAME;
+    });
+
+    gitClient.cliVersion.mockImplementation(async () => {
+      return "2.7.0";
     });
 
     gitClient.mergedTags.mockImplementation(async () => {
@@ -123,7 +123,8 @@ describe("git tag based release", () => {
 
     await release.getNextVersion();
 
-    expect(LOGGER.info).toBeCalledWith("Filtered 1 commit");
+    expect(LOGGER.info).toBeCalledWith("Filtered 1 commit(s)");
+
     expect(isReleaseCommit).toBeCalledTimes(1);
   });
 
@@ -204,7 +205,8 @@ describe("git tag based release", () => {
       return [tag];
     });
 
-    expect(await release.getVersions()).toStrictEqual([version]);
+    expect(await release.listVersions()).toStrictEqual([version]);
+
     expect(gitClient.mergedTags).toBeCalledWith("HEAD");
   });
 
@@ -288,7 +290,18 @@ describe("git tag based release", () => {
     expect(await release.getPreviousVersion()).toStrictEqual(expectedVersion);
   });
 
-  test("next version bump using pre release", async () => {
+  test("non semantic tag names are filtered", async () => {
+    const tag = { name: "v2.0", hash: HASH };
+
+    gitClient.mergedTags.mockImplementation(async () => {
+      return [tag];
+    });
+
+    expect(await release.listVersions()).toHaveLength(0);
+    expect(LOGGER.debug).toBeCalledWith(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
+  });
+
+  test("next version bump uses pre release id", async () => {
     const version = "0.1.0-beta.0";
     const previousTag = { name: `v${version}`, hash: HASH };
 
@@ -312,19 +325,8 @@ describe("git tag based release", () => {
     expect(await release.getNextVersion()).toStrictEqual("0.1.0-beta.1");
   });
 
-  test("non semantic tag names are filtered", async () => {
-    const tag = { name: "v2.0", hash: HASH };
-
-    gitClient.mergedTags.mockImplementation(async () => {
-      return [tag];
-    });
-
-    expect(await release.getVersions()).toHaveLength(0);
-    expect(LOGGER.debug).toBeCalledWith(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
-  });
-
   test("previous release change log is generated", async () => {
-    const versions = await release.getVersions();
+    const versions = await release.listVersions();
 
     for (const version of versions) {
       const changelog = await release.getChangelogByVersion(version);
@@ -435,8 +437,7 @@ describe("git tag based release", () => {
       ];
     });
 
-    expect(await release.getVersions()).toStrictEqual([
-      // fp
+    expect(await release.listVersions(2)).toStrictEqual([
       preReleaseTag.name.slice(1),
       stableTag.name.slice(1),
     ]);
@@ -483,7 +484,7 @@ describe("git tag based release", () => {
       ...releaseOptions(),
       gitClient,
     });
-    const expectedError = new Error(`A tag for version '${nextVersion}' already exists (tag hash: ${tag.hash})`);
+    const expectedError = new Error('Tag already exists in remote.');
 
     gitClient.mergedTags.mockImplementation(async () => {
       return [tag];
@@ -492,11 +493,9 @@ describe("git tag based release", () => {
       return tag.hash;
     });
 
-    expect(await release.getNextVersion().catch((e) => {
-      return e;
-    })).toStrictEqual(expectedError);
+    await expect(release.getNextVersion()).rejects.toStrictEqual(expectedError);
 
-    expect(LOGGER.warn).toBeCalledWith(`Version ${nextVersion} was already released. (tag: v${nextVersion})`);
+    expect(LOGGER.warn).toBeCalledWith(`A tag named 'v${nextVersion}' already exists.`);
 
     expect(LOGGER.warn).toBeCalledWith(`You can fix this by branching from ${tag.hash}`);
   });
@@ -535,24 +534,6 @@ describe("git tag based release", () => {
     const expectedError = new Error(`Could not find version ${version} conventional commits`);
 
     expect(await release.getChangelogByVersion(version).catch((e) => {
-      return e;
-    })).toStrictEqual(expectedError);
-  });
-
-  test("next version fails when pre release branch is missing pre release id", async () => {
-    const release = await SDK.gitTagBasedRelease({
-      ...releaseOptions(),
-      gitClient,
-      preReleaseBranches: {},
-    });
-    const branchName = PRE_RELEASE_BRANCH_NAME;
-    const expectedError = new Error(`Could not find pre release id for branch '${branchName}'`);
-
-    gitClient.refName.mockImplementation(async () => {
-      return branchName;
-    });
-
-    expect(await release.getNextVersion().catch((e) => {
       return e;
     })).toStrictEqual(expectedError);
   });

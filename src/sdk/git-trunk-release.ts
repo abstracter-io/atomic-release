@@ -1,3 +1,4 @@
+import { memo } from "radash";
 import { loadPreset } from "conventional-changelog-preset-loader";
 import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
 import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
@@ -6,8 +7,6 @@ import { Logger } from "./logger";
 import { Release } from "./release";
 import { GitExecaClient } from "./git-execa-client";
 import { processStdoutLogger } from "./process-stdout-logger";
-
-import { memoize } from "../utils/memoize";
 
 type ConventionalPreset = {
   parser: ParserOptions;
@@ -88,85 +87,32 @@ const defaultConfig = async (config: GitTrunkReleaseConfig): Promise<Options> =>
   };
 };
 
+const trimHash = (hash: string) => hash.slice(0, 7);
+
 const gitTrunkRelease = async (config: GitTrunkReleaseConfig): Promise<Release> => {
-  const memo = memoize();
   const { logger, ...opt } = await defaultConfig(config);
   const preset = opt.conventionalChangelogPreset;
   const gitClient = opt.gitClient;
-  const headHash = await gitClient.refHash("HEAD");
   const commitParser = new CommitParser(preset.parser);
 
   // Private methods
   // ================
+  const getHeadHash = memo(async () => {
+    const hash = await gitClient.refHash("HEAD");
+
+    return hash.slice(0, 7);
+  });
+
   const parseCommit = (rawConventionalCommit: string): ConventionalCommit => {
     return commitParser.parse(rawConventionalCommit);
   };
 
-  const getChangelogWriterContext = (): WriterContext<any> => {
-    if (opt.conventionalChangelogWriterContext) {
-      return opt.conventionalChangelogWriterContext;
-    }
-
-    throw new Error("conventional changelog writer context is missing");
-  };
-
-  const getConventionalCommits = async (): Promise<ConventionalCommit[]> => {
-    return memo("conventional_commits", async () => {
-      const commits = await opt.rawConventionalCommits("-1");
-      const parsedCommits = commits.map((commit) => {
-        return parseCommit(commit.raw);
-      });
-
-      return parsedCommits.filter(opt.changelogCommitFilter);
-    });
-  };
-
-  const getPreviousVersionsConventionalCommits = async (): Promise<{ [version: string]: ConventionalCommit[] }> => {
-    return memo("previous_versions_conventional_commits", async () => {
-      const commits = await gitClient.commits("HEAD");
-      const versionsConventionalCommits = {};
-
-      // remove the first ('HEAD') commit
-      commits.shift();
-
-      await Promise.all(commits.map(async (commit) => {
-        const [rawConventionalCommit] = await opt.rawConventionalCommits(`${commit.hash} -1`);
-        const commits = [parseCommit(rawConventionalCommit.raw)];
-
-        versionsConventionalCommits[commit.hash.slice(0, 7)] = commits.filter(opt.changelogCommitFilter);
-      }));
-
-      return versionsConventionalCommits;
-    });
-  };
-
-  // Public methods
-  // ==============
-  const getVersions = async (): Promise<string[]> => {
-    return memo("versions", async () => {
-      const commits = await gitClient.commits("HEAD");
-
-      // FIXME: Perhaps its best to return the last two commits here
-
-      commits.shift();
-
-      return commits.map((commit) => {
-        return commit.hash.slice(0, 7);
-      });
-    });
-  };
-
-  const getChangelog = async (): Promise<string | null> => {
-    return memo("changelog", async () => {
-      const [nextVersion, commits] = await Promise.all([
-        getNextVersion(),
-        getConventionalCommits()
-      ]);
-
-      if (commits.length) {
+  const generateChangelog = async (version: string, commits: ConventionalCommit[]): Promise<string | null> => {
+    if (commits.length) {
+      if (opt.conventionalChangelogWriterContext) {
         const context = {
-          ...getChangelogWriterContext(),
-          version: nextVersion,
+          ...opt.conventionalChangelogWriterContext as WriterContext<any>,
+          version,
         };
 
         return writeChangelogString(commits, context, preset.writer).then(c => {
@@ -174,77 +120,91 @@ const gitTrunkRelease = async (config: GitTrunkReleaseConfig): Promise<Release> 
         });
       }
 
-      return null;
-    });
+      throw new Error("conventional changelog writer context is missing");
+    }
+
+    return null;
   };
 
-  const getNextVersion = async (): Promise<string> => {
-    return memo("next_version", async () => {
-      return headHash.slice(0, 7);
-    });
-  };
+  const getConventionalCommitByCommitHash = memo(async (version: string): Promise<ConventionalCommit | null> => {
+    const rawConventionalCommits = await opt.rawConventionalCommits(`${version} -1`);
 
-  const getPreviousVersion = async (): Promise<string> => {
-    return memo("previous_version", async () => {
-      const versions = await getVersions();
+    if (rawConventionalCommits.length) {
+      const conventionalCommit = parseCommit(rawConventionalCommits[0].raw);
 
-      if (!versions.length) {
-        const hash = headHash.slice(0, 7);
-
-        logger.info(`Could not find a previous version. Will use ${hash} as initial version`);
-
-        return hash;
+      if (opt.changelogCommitFilter(conventionalCommit)) {
+        return conventionalCommit;
       }
+    }
 
-      return versions[0];
+    return null;
+  });
+
+  // Public methods
+  // ==============
+  const listVersions = memo(async (max: number = 1): Promise<string[]> => {
+    const commits = await gitClient.commits(`-n ${max + 1}`);
+
+    // this shift removes the HEAD commit.
+    commits.shift();
+
+    return commits.map((commit) => {
+      return trimHash(commit.hash);
     });
-  };
+  });
 
-  const getMentionedIssues = async (): Promise<Set<string>> => {
-    return memo("mentioned_issues", async () => {
-      const issues = new Set<string>();
-      const commits = await getConventionalCommits();
+  const getChangelog = memo(async (): Promise<string | null> => {
+    const commitHash = await getNextVersion();
 
-      for (const commit of commits) {
-        for (const reference of commit.references) {
-          const issue = reference.issue;
+    return getChangelogByVersion(commitHash);
+  });
 
-          if (issue) {
-            issues.add(issue);
-          }
+  const getNextVersion = getHeadHash;
+
+  const getPreviousVersion = memo(async (): Promise<string> => {
+    const versions = await listVersions(1);
+
+    if (!versions.length) {
+      const hash = await getHeadHash();
+
+      logger.info(`Could not find a previous version. Will use HEAD hash ${hash} as initial version`);
+
+      return hash;
+    }
+
+    return versions[0];
+  });
+
+  const getMentionedIssues = memo(async (): Promise<Set<string>> => {
+    const issues = new Set<string>();
+    const commitHash = await getNextVersion();
+    const conventionalCommit = await getConventionalCommitByCommitHash(commitHash);
+
+    if (conventionalCommit) {
+      for (const reference of conventionalCommit.references) {
+        const issue = reference.issue;
+
+        if (issue) {
+          issues.add(issue);
         }
       }
+    }
 
-      return issues;
-    });
-  };
+    return issues;
+  });
 
-  const getChangelogByVersion = async (version: string): Promise<string | null> => {
-    return memo(`changelog_${version}`, async () => {
-      const versionsConventionalCommits = await getPreviousVersionsConventionalCommits();
-      const commits = versionsConventionalCommits[version];
+  const getChangelogByVersion = memo(async (version: string): Promise<string | null> => {
+    const conventionalCommit = await getConventionalCommitByCommitHash(version);
 
-      if (Array.isArray(commits)) {
-        if (commits.length) {
-          const context = {
-            ...getChangelogWriterContext(),
-            version,
-          };
+    if (conventionalCommit) {
+      return generateChangelog(version, [conventionalCommit])
+    }
 
-          return writeChangelogString(commits, context, preset.writer).then(c => {
-            return c;
-          });
-        }
-
-        return null;
-      }
-
-      throw new Error(`Could not find commits for version '${version}'`);
-    });
-  };
+    return null;
+  });
 
   return {
-    getVersions,
+    listVersions,
     getChangelog,
     getNextVersion,
     getMentionedIssues,

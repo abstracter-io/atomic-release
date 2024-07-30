@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`git trunk release > changelog is generated 1`] = `
+exports[`git trunk release > generating a changelog 1`] = `
 "## c658ea3 (2021-10-08)
 
 ### Features

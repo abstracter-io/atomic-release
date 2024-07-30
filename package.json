@@ -73,6 +73,7 @@
     "mime": "^4.0.4",
     "parse-author": "^2.0.0",
     "pretty-ms": "^9.1.0",
+    "radash": "^12.1.0",
     "semver": "^7.6.3",
     "uri-templates": "^0.2.0"
   }

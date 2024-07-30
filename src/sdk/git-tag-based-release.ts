@@ -1,4 +1,5 @@
 import semver from "semver";
+import { memo } from "radash";
 import { loadPreset } from "conventional-changelog-preset-loader";
 import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
 import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
@@ -7,8 +8,6 @@ import { Logger } from "./logger";
 import { Release } from "./release";
 import { processStdoutLogger } from "./process-stdout-logger";
 import { GitExecaClient, MergedTag } from "./git-execa-client";
-
-import { memoize } from "../utils/memoize";
 
 type ConventionalPreset = {
   parser: ParserOptions;
@@ -155,120 +154,118 @@ const presetBumpLevelToSemanticComponent = (level: number): string => {
 };
 
 const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Release> => {
-  const memo = memoize();
   const { logger, ...opt } = await defaultConfig(config);
   const preset = opt.conventionalChangelogPreset;
   const gitClient = opt.gitClient;
   const commitParser = new CommitParser(preset.parser);
-  const branchName = await gitClient.refName("HEAD");
-  const preReleaseId = opt.preReleaseBranches[branchName];
 
   // Private methods
   // ================
+  const getPreReleaseId = memo(async () => {
+    const branchName = await gitClient.refName("HEAD");
+
+    return opt.preReleaseBranches[branchName];
+  });
+
   const parseCommit = async (rawConventionalCommit: string): Promise<ConventionalCommit> => {
     return commitParser.parse(rawConventionalCommit);
   };
 
-  const getMergedTags = async (): Promise<MergedTag[]> => {
-    return memo("tags", async () => {
-      const mergedHeadTags = await gitClient.mergedTags("HEAD");
-      const stableTags: MergedTag[] = [];
-      const branchTags: MergedTag[] = [];
-      const filteredTags: MergedTag[] = [];
+  const getMergedTags = memo(async (): Promise<MergedTag[]> => {
+    const [preReleaseId, mergedHeadTags] = await Promise.all([
+      getPreReleaseId(),
+      await gitClient.mergedTags("HEAD"),
+    ]);
+    const stableTags: MergedTag[] = [];
+    const branchTags: MergedTag[] = [];
+    const filteredTags: MergedTag[] = [];
 
-      for (const tag of mergedHeadTags) {
-        const preReleaseComponents = semver.prerelease(tag.name) as string[] | null;
-        const tagPreReleaseId = preReleaseComponents?.[0] ?? undefined;
+    for (const tag of mergedHeadTags) {
+      const preReleaseComponents = semver.prerelease(tag.name) as string[] | null;
+      const tagPreReleaseId = preReleaseComponents?.[0] ?? undefined;
 
-        if (!semver.valid(tag.name)) {
-          logger.debug(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
+      if (!semver.valid(tag.name)) {
+        logger.debug(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
 
-          filteredTags.push(tag);
-        }
-        //
-        else if (tagPreReleaseId === undefined) {
-          stableTags.push(tag);
-        }
-        //
-        else if (preReleaseId && tagPreReleaseId === preReleaseId) {
-          branchTags.push(tag);
-        }
+        filteredTags.push(tag);
       }
+      else if (tagPreReleaseId === undefined) {
+        stableTags.push(tag);
+      }
+      else if (preReleaseId && tagPreReleaseId === preReleaseId) {
+        branchTags.push(tag);
+      }
+    }
 
-      filteredTags.length && logger.info(`Filtered ${filteredTags.length} tags`);
+    filteredTags.length && logger.info(`Filtered ${filteredTags.length} tags`);
 
-      return [...sortTags(branchTags), ...sortTags(stableTags)];
+    return [...sortTags(branchTags), ...sortTags(stableTags)];
+  });
+
+  const getConventionalCommits = memo(async (): Promise<ConventionalCommit[]> => {
+    const tags = await getMergedTags();
+    const until = await gitClient.refHash("HEAD");
+    const since = tags[0]?.hash;
+    const range = since ? `${since}..` : until;
+    const commits = await opt.rawConventionalCommits(range);
+    const parsedCommits = commits.map((commit) => {
+      return parseCommit(commit.raw);
     });
-  };
 
-  const getConventionalCommits = async (): Promise<ConventionalCommit[]> => {
-    return memo("conventional_commits", async () => {
-      const tags = await getMergedTags();
-      const until = await gitClient.refHash("HEAD");
-      const since = tags[0]?.hash;
-      const range = since ? `${since}..` : until;
-      const commits = await opt.rawConventionalCommits(range);
-      const parsedCommits = commits.map((commit) => {
-        return parseCommit(commit.raw);
-      });
+    logger.info(`Retrieving commits ${since ? `since ${since}` : `until ${until}`}`);
 
-      logger.info(`Retrieving commits ${since ? `since ${since}` : `until ${until}`}`);
-
-      return Promise.all(parsedCommits).then(c => {
-        return c;
-      });
+    return Promise.all(parsedCommits).then(c => {
+      return c;
     });
-  };
+  });
 
   // FIXME:
   //  This is overly complicated, given two tags, extract the commits
   //  between them, fetch their info, parse them and assign them to the <version, commits> dictionary
-  const getAllVersionsConventionalCommits = async (): Promise<{ [version: string]: ConventionalCommit[] }> => {
-    return memo("versions_conventional_commits", async () => {
-      const tags = await getMergedTags();
-      const versionsConventionalCommits = {};
+  const getAllVersionsConventionalCommits = memo(async (): Promise<{ [version: string]: ConventionalCommit[] }> => {
+    const tags = await getMergedTags();
+    const versionsConventionalCommits = {};
 
-      if (tags.length) {
-        const taken = new Set();
-        const untilHash = tags[0].hash;
-        const rawConventionalCommits = await opt.rawConventionalCommits(untilHash);
-        const hashIndices = new Map<string, number>();
+    if (tags.length) {
+      const taken = new Set();
+      const untilHash = tags[0].hash;
+      const rawConventionalCommits = await opt.rawConventionalCommits(untilHash);
+      const hashIndices = new Map<string, number>();
 
-        for (let i = 0; i < rawConventionalCommits.length; i++) {
-          // 123, 1
-          // 456, 2
-          hashIndices.set(rawConventionalCommits[i].hash, i);
-        }
-
-        for (let i = tags.length - 1; i > -1; i -= 1) {
-          const tag = tags[i];
-          const conventionalCommits: ConventionalCommit[] = [];
-
-          let j = hashIndices.get(tag.hash); // 2
-
-          /* istanbul ignore if */
-          if (j === undefined) {
-            throw new Error("Can this happen??");
-          }
-
-          for (let l = rawConventionalCommits.length; j < l; j += 1) {
-            const commit = rawConventionalCommits[j];
-
-            if (!taken.has(commit.hash)) {
-              // eslint-disable-next-line no-await-in-loop
-              conventionalCommits.push(await parseCommit(commit.raw));
-
-              taken.add(commit.hash);
-            }
-          }
-
-          versionsConventionalCommits[clean(tag.name)] = conventionalCommits;
-        }
+      for (let i = 0; i < rawConventionalCommits.length; i++) {
+        // 123, 1
+        // 456, 2
+        hashIndices.set(rawConventionalCommits[i].hash, i);
       }
 
-      return versionsConventionalCommits;
-    });
-  };
+      for (let i = tags.length - 1; i > -1; i -= 1) {
+        const tag = tags[i];
+        const conventionalCommits: ConventionalCommit[] = [];
+
+        let j = hashIndices.get(tag.hash); // 2
+
+        /* istanbul ignore if */
+        if (j === undefined) {
+          throw new Error("Can this happen??");
+        }
+
+        for (let l = rawConventionalCommits.length; j < l; j += 1) {
+          const commit = rawConventionalCommits[j];
+
+          if (!taken.has(commit.hash)) {
+            // eslint-disable-next-line no-await-in-loop
+            conventionalCommits.push(await parseCommit(commit.raw));
+
+            taken.add(commit.hash);
+          }
+        }
+
+        versionsConventionalCommits[clean(tag.name)] = conventionalCommits;
+      }
+    }
+
+    return versionsConventionalCommits;
+  });
 
   const getChangelogWriterContext = (): WriterContext<any> => {
     if (opt.conventionalChangelogWriterContext) {
@@ -280,131 +277,122 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
 
   // Public methods
   // ==============
-  const getVersions = async (): Promise<string[]> => {
-    return memo("versions", async () => {
-      const tags = await getMergedTags();
+  const listVersions = memo(async (max: number = 1): Promise<string[]> => {
+    const tags = await getMergedTags();
 
-      return tags.map((tags) => {
-        return clean(tags.name);
-      });
+    tags.length = Math.min(tags.length, max);
+
+    return tags.map((tags) => {
+      return clean(tags.name);
     });
-  };
+  });
 
-  const getChangelog = async (): Promise<string> => {
-    return memo("changelog", async () => {
-      const nextVersion = await getNextVersion();
-      const commits = await getConventionalCommits();
-      const context = {
-        ...getChangelogWriterContext(),
-        version: nextVersion,
-      };
+  const getChangelog = memo(async (): Promise<string> => {
+    const nextVersion = await getNextVersion();
+    const commits = await getConventionalCommits();
+    const context = {
+      ...getChangelogWriterContext(),
+      version: nextVersion,
+    };
 
-      return writeChangelogString(commits, context, preset.writer).then(c => {
-        return c;
-      });
+    return writeChangelogString(commits, context, preset.writer).then(c => {
+      return c;
     });
-  };
+  });
 
-  const getNextVersion = async (): Promise<string> => {
-    return memo<Promise<string>>("next_version", async () => {
-      const [previousVersion, conventionalCommits] = await Promise.all([
-        getPreviousVersion(),
-        getConventionalCommits(),
-      ]);
-      const releaseCommits = conventionalCommits.filter(opt.isReleaseCommit);
-      const totalFiltered = conventionalCommits.length - releaseCommits.length;
+  const getNextVersion = memo(async (): Promise<string> => {
+    const [previousVersion, conventionalCommits] = await Promise.all([
+      getPreviousVersion(),
+      getConventionalCommits(),
+    ]);
+    const releaseCommits = conventionalCommits.filter(opt.isReleaseCommit);
+    const totalFiltered = conventionalCommits.length - releaseCommits.length;
 
-      logger.info(`Found ${conventionalCommits.length} new commits`);
+    logger.info(`Found ${conventionalCommits.length} new commits`);
 
-      totalFiltered && logger.info(`Filtered ${totalFiltered} commit${totalFiltered > 1 ? "s" : ""}`);
+    logger.info(`Filtered ${totalFiltered} commit(s)`);
 
-      if (releaseCommits.length) {
-        const bump = preset.whatBump(releaseCommits);
-        const type = presetBumpLevelToSemanticComponent(bump.level);
-        const next = inc(previousVersion, type, preReleaseId);
-        const name = `v${next}`;
-        const hash = await gitClient.remoteTagHash(name);
+    if (releaseCommits.length) {
+      const preReleaseId = await getPreReleaseId();
+      const bump = preset.whatBump(releaseCommits);
+      const type = presetBumpLevelToSemanticComponent(bump.level);
+      const next = inc(previousVersion, type, preReleaseId);
+      const name = `v${next}`;
+      const hash = await gitClient.remoteTagHash(name);
 
-        if (hash) {
-          logger.warn(`A tag named '${name}' already exists.`);
+      if (hash) {
+        logger.warn(`A tag named '${name}' already exists.`);
 
-          logger.warn(`You can fix this by branching from ${hash}`);
+        logger.warn(`You can fix this by branching from ${hash}`);
 
-          throw new Error('Tag already exists in remote.');
-        }
-
-        logger.info(bump.reason);
-
-        return next;
+        throw new Error('Tag already exists in remote.');
       }
 
-      return previousVersion;
-    });
-  };
+      logger.info(bump.reason);
 
-  const getPreviousVersion = async (): Promise<string> => {
-    return memo("previous_version", async () => {
-      const versions = await getVersions();
+      return next;
+    }
 
-      if (versions.length) {
-        return versions[0];
-      }
+    return previousVersion;
+  });
 
-      logger.info(`Could not find a previous version. Will use ${opt.initialVersion} as initial version`);
+  const getPreviousVersion = memo(async (): Promise<string> => {
+    const versions = await listVersions();
 
-      if (!semver.valid(opt.initialVersion)) {
-        throw new Error(`${opt.initialVersion} is not a semantic version`);
-      }
+    if (versions.length) {
+      return versions[0];
+    }
 
-      return opt.initialVersion;
-    });
-  };
+    logger.info(`Could not find a previous version. Will use ${opt.initialVersion} as initial version`);
 
-  const getMentionedIssues = async (): Promise<Set<string>> => {
-    return memo("mentioned_issues", async () => {
-      const issues = new Set<string>();
-      const commits = await getConventionalCommits();
+    if (!semver.valid(opt.initialVersion)) {
+      throw new Error(`${opt.initialVersion} is not a semantic version`);
+    }
 
-      for (const commit of commits) {
-        for (const reference of commit.references) {
-          const issue = reference.issue;
+    return opt.initialVersion;
+  });
 
-          if (issue) {
-            issues.add(issue);
-          }
+  const getMentionedIssues = memo(async (): Promise<Set<string>> => {
+    const issues = new Set<string>();
+    const commits = await getConventionalCommits();
+
+    for (const commit of commits) {
+      for (const reference of commit.references) {
+        const issue = reference.issue;
+
+        if (issue) {
+          issues.add(issue);
         }
       }
+    }
 
-      return issues;
-    });
-  };
+    return issues;
+  });
 
   // FIXME:
   //  getAllVersionsConventionalCommits is too much
   //  export a method for a retrieving specific version commits
   //  > getVersionConventionalCommits(version)
-  const getChangelogByVersion = async (version: string): Promise<string> => {
-    return memo(`changelog_${version}`, async () => {
-      const versionsConventionalCommits = await getAllVersionsConventionalCommits();
-      const commits = versionsConventionalCommits[version];
+  const getChangelogByVersion = memo(async (version: string): Promise<string> => {
+    const versionsConventionalCommits = await getAllVersionsConventionalCommits();
+    const commits = versionsConventionalCommits[version];
 
-      if (commits) {
-        const context = {
-          ...getChangelogWriterContext(),
-          version,
-        };
+    if (commits) {
+      const context = {
+        ...getChangelogWriterContext(),
+        version,
+      };
 
-        return writeChangelogString(commits, context, preset.writer).then(c => {
-          return c;
-        })
-      }
+      return writeChangelogString(commits, context, preset.writer).then(c => {
+        return c;
+      })
+    }
 
-      throw new Error(`Could not find version ${version} conventional commits`);
-    });
-  };
+    throw new Error(`Could not find version ${version} conventional commits`);
+  });
 
   return {
-    getVersions,
+    listVersions,
     getChangelog,
     getNextVersion,
     getMentionedIssues,

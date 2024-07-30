@@ -3,36 +3,41 @@ import semver from "semver";
 
 import type { GitClient, MergedTag, Commit } from "./git-client";
 
-type GitClientOptions = {
+type GitExecaClientConfig = {
+  execa?: typeof execa;
   remote: string;
   workingDirectory: string;
 };
 
 class GitExecaClient implements GitClient {
-  private readonly options: GitClientOptions;
+  private readonly config: GitExecaClientConfig;
 
-  public constructor(options: Partial<GitClientOptions> = {}) {
-    this.options = {
-      remote: options.remote ?? "origin",
-      workingDirectory: options.workingDirectory ?? process.cwd(),
+  public constructor(config: Partial<GitExecaClientConfig> = {}) {
+    this.config = {
+      remote: config.remote ?? "origin",
+      workingDirectory: config.workingDirectory ?? process.cwd(),
     };
   }
 
-  private cli(args: string[], options?: execa.Options) {
-    return execa("git", args, {
-      cwd: this.options.workingDirectory,
-      ...options,
+  private execa(cmd: string, args: string[], config?: execa.Options) {
+    return execa(cmd, args, config);
+  }
+
+  private cli(args: string[], config?: execa.Options) {
+    return this.execa("git", args, {
+      cwd: this.config.workingDirectory,
+      ...config,
     });
   }
 
   async log(range: string, format: string): Promise<string[]> {
     const logs: string[] = [];
     const delimiter = ":++:";
-    const subprocess = await this.cli(["log", range, `--pretty=format:${format}${delimiter}`]);
+    const subprocess = await this.cli(["log", ...range.split(" "), `--pretty=format:${format}${delimiter}`]);
 
     for (const log of subprocess.stdout.split(delimiter)) {
       if (log.length) {
-        logs.push(log.startsWith("\n") ? log.substr(1) : log);
+        logs.push(log.startsWith("\n") ? log.substring(1) : log);
       }
     }
 
@@ -151,7 +156,7 @@ class GitExecaClient implements GitClient {
   }
 
   async remoteTagHash(tagName: string): Promise<string | null> {
-    const { stdout } = await this.cli(["ls-remote", this.options.remote, "-t", `refs/tags/${tagName}`]);
+    const { stdout } = await this.cli(["ls-remote", this.config.remote, "-t", `refs/tags/${tagName}`]);
 
     if (stdout.length) {
       return stdout.split("\t")[0];
@@ -162,7 +167,7 @@ class GitExecaClient implements GitClient {
 
   async remoteBranchHash(branchName?: string): Promise<string | null> {
     const branch = branchName ?? (await this.refName("HEAD"));
-    const { stdout } = await this.cli(["ls-remote", this.options.remote, "-h", `refs/heads/${branch}`]);
+    const { stdout } = await this.cli(["ls-remote", this.config.remote, "-h", `refs/heads/${branch}`]);
 
     if (stdout.length) {
       return stdout.split("\t")[0];
@@ -172,4 +177,4 @@ class GitExecaClient implements GitClient {
   }
 }
 
-export { GitExecaClient, GitClientOptions, MergedTag };
+export { GitExecaClient, GitExecaClientConfig, MergedTag };

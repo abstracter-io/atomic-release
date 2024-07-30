@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`git semantic release > previous release change log is generated 1`] = `
+exports[`git tag based release > previous release change log is generated 1`] = `
 "## 0.1.0 (2021-10-08)
 
 ### Features
@@ -9,7 +9,7 @@ exports[`git semantic release > previous release change log is generated 1`] = `
 "
 `;
 
-exports[`git semantic release > release change log is generated 1`] = `
+exports[`git tag based release > release change log is generated 1`] = `
 "## 0.2.0 (2021-10-08)
 
 ### Features

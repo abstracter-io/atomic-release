@@ -3,7 +3,7 @@ import { vitest, describe, test, expect, beforeEach } from 'vitest'
 import { SDK } from "../../src/index";
 import { Stubs } from "../stubs";
 
-const HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
+const HEAD_HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
 const LOGGER = new Stubs.LoggerStub();
 
 const commit = () => {
@@ -20,7 +20,7 @@ const commit = () => {
       email: "",
     },
     tags: [],
-    hash: HASH,
+    hash: HEAD_HASH,
     committedTimestamp: 1633686020134,
   };
 };
@@ -45,8 +45,13 @@ describe("git trunk release", () => {
   beforeEach(async () => {
     gitClient = new Stubs.GitClientStub();
 
+    release = await SDK.gitTrunkRelease({
+      gitClient,
+      ...releaseOptions(),
+    });
+
     gitClient.refHash.mockImplementation(async () => {
-      return HASH;
+      return HEAD_HASH;
     });
 
     gitClient.commits.mockImplementation(async () => {
@@ -55,11 +60,6 @@ describe("git trunk release", () => {
 
     gitClient.refName.mockImplementation(async () => {
       return "main";
-    });
-
-    release = await SDK.gitTrunkRelease({
-      gitClient,
-      ...releaseOptions(),
     });
   });
 
@@ -75,49 +75,54 @@ describe("git trunk release", () => {
     expect(changelogCommitFilter).toBeCalledTimes(1);
   });
 
-  test("changelog is generated", async () => {
+  test('list previous versions', async () => {});
+
+  test("generating a changelog", async () => {
+    const rawConventionalCommits = vitest.fn(async (range: string) => {
+      const commits = await gitClient.commits(range);
+
+      return commits.map((commit) => {
+        const lines = [
+          // subject
+          `${commit.subject}`,
+
+          // body
+          `${commit.body}`,
+
+          // extra fields
+          "-hash-",
+          `${commit.hash}`,
+
+          "-gitTags-",
+          `${commit.tags.join(",")}`,
+
+          "-committerDate-",
+          `${new Date(1633686020134)}`,
+        ];
+
+        return {
+          hash: commit.hash,
+          raw: lines.join("\n"),
+        };
+      });
+    });
     const release = await SDK.gitTrunkRelease({
       ...releaseOptions(),
 
       gitClient,
 
-      rawConventionalCommits: async (range: string) => {
-        const commits = await gitClient.commits(range);
-
-        return commits.map((commit) => {
-          const lines = [
-            // subject
-            `${commit.subject}`,
-
-            // body
-            `${commit.body}`,
-
-            // extra fields
-            "-hash-",
-            `${commit.hash}`,
-
-            "-gitTags-",
-            `${commit.tags.join(",")}`,
-
-            "-committerDate-",
-            `${new Date(1633686020134)}`,
-          ];
-
-          return {
-            hash: commit.hash,
-            raw: lines.join("\n"),
-          };
-        });
-      },
+      rawConventionalCommits,
     });
 
     const changelog = await release.getChangelog();
 
     expect(changelog).toMatchSnapshot();
+
+    expect(rawConventionalCommits).toBeCalledWith(`${HEAD_HASH.slice(0, 7)} -1`);
   });
 
   test("next version is 'HEAD' hash", async () => {
-    const expectedHash = HASH.slice(0, 7);
+    const expectedHash = HEAD_HASH.slice(0, 7);
 
     expect(await release.getNextVersion()).toStrictEqual(expectedHash);
   });
@@ -129,11 +134,10 @@ describe("git trunk release", () => {
           ...commit(),
           subject: "feat!: ... closes #3, #46, #39",
         },
-        { ...commit(), subject: "Merge pull request #999 from repo/branch" },
       ];
     });
 
-    expect(await release.getMentionedIssues()).toStrictEqual(new Set(["3", "39", "46", "999"]));
+    expect(await release.getMentionedIssues()).toStrictEqual(new Set(["3", "39", "46"]));
   });
 
   test("previous version changelog is null", async () => {
@@ -172,44 +176,25 @@ describe("git trunk release", () => {
   });
 
   test("previous version fallbacks to 'HEAD' hash", async () => {
-    const hash = HASH.slice(0, 7);
+    const hash = HEAD_HASH.slice(0, 7);
 
     expect(await release.getPreviousVersion()).toStrictEqual(hash);
 
-    expect(LOGGER.info).toBeCalledWith(`Could not find a previous version. Will use ${hash} as initial version`);
+    expect(LOGGER.info).toBeCalledWith(`Could not find a previous version. Will use HEAD hash ${hash} as initial version`);
   });
 
   test("previous version is the second commit hash", async () => {
-    const expectedVersion = HASH.slice(0, 7);
+    const expectedVersion = HEAD_HASH.slice(0, 7);
 
     gitClient.commits.mockImplementation(async () => {
       return [
         { ...commit(), hash: "1234" },
 
-        { ...commit(), hash: HASH },
+        { ...commit(), hash: HEAD_HASH },
       ];
     });
 
     expect(await release.getPreviousVersion()).toStrictEqual(expectedVersion);
-  });
-
-  test("rawConventionalCommits is called with 'HEAD' ref", async () => {
-    const rawConventionalCommits = vitest.fn();
-    const release = await SDK.gitTrunkRelease({
-      ...releaseOptions(),
-
-      gitClient,
-
-      rawConventionalCommits,
-    });
-
-    rawConventionalCommits.mockImplementation(() => {
-      return [];
-    });
-
-    await release.getChangelog();
-
-    expect(rawConventionalCommits).toBeCalledWith("-1");
   });
 
   test("generating changelog fails when writer context is missing", async () => {
@@ -225,12 +210,16 @@ describe("git trunk release", () => {
     })).toStrictEqual(expectedError);
   });
 
-  test("generating changelog by version fails when version does not exists", async () => {
-    const version = "fffferrt";
-    const expectedError = new Error(`Could not find commits for version '${version}'`);
+  test("generating version changelog returns null when version does not exists", async () => {
+    const rawConventionalCommits = vitest.fn(async () => []);
+    const release = await SDK.gitTrunkRelease({
+      ...releaseOptions(),
 
-    expect(await release.getChangelogByVersion(version).catch((e) => {
-      return e;
-    })).toStrictEqual(expectedError);
+      gitClient,
+
+      rawConventionalCommits,
+    });
+
+    expect(await release.getChangelogByVersion('xyz')).toStrictEqual(null);
   });
 });

@@ -1,7 +1,7 @@
 interface Release {
-  getChangelog(): Promise<string | null>;
+  listVersions(max: number = 1): Promise<string[]>;
 
-  getVersions(): Promise<string[]>;
+  getChangelog(): Promise<string | null>;
 
   getNextVersion(): Promise<string>;
 

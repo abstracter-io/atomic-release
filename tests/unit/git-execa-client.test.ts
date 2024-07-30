@@ -1,52 +1,47 @@
-import { vitest, describe, test, expect, beforeEach } from "vitest";
+import { vitest, describe, test, expect } from "vitest";
 
 import { SDK } from "../../src";
 
-const execute = vitest.fn();
+const STUB_CONFIG = {
+  remote: "origin2",
+  workingDirectory: "/this/is/sparta",
+}
 
-vitest.mock("execa", () => {
-  return {
-    default: async (...args) => {
-      return execute(...args);
-    }
-  };
-});
+class GitExecaClientStub extends SDK.GitExecaClient {
+  constructor(config = STUB_CONFIG) {
+    super(config);
+  }
+
+  // @ts-expect-error this is the way
+  execa = vitest.fn(async (_cmd, _args, _options): Promise<any> => {
+    return {
+      stdout: "",
+    };
+  });
+}
 
 describe("git execa client", () => {
-  const expected = {
-    remote: "origin2",
-    workingDirectory: "/this/is/sparta",
-  };
-  const gitClient = new SDK.GitExecaClient(expected);
-
-  beforeEach(() => {
-    execute.mockImplementation((..._args) => {
-      return Promise.resolve({
-        stdout: "",
-      });
-    });
-  });
-
   test("log", async () => {
     const range = "123..";
     const format = "%s";
     const delimiter = ":++:";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation((..._args) => {
-      return Promise.resolve({
+    gitClient.execa.mockImplementation(async (..._args) => {
+      return {
         stdout: ["1", "2"].join(delimiter),
-      });
+      };
     });
 
     expect(await gitClient.log(range, format)).toStrictEqual(["1", "2"]);
 
-    expect(execute).toBeCalledWith("git", ["log", range, `--pretty=format:${format}${delimiter}`], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["log", range, `--pretty=format:${format}${delimiter}`], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("commits", async () => {
-    const timestampInSeconds = 1633041877;
+    const delimiter = ":<>:";
     const expectedRange = "123..";
     const commit: SDK.Commit = {
       hash: `${Date.now()}`,
@@ -54,7 +49,7 @@ describe("git execa client", () => {
       body: "This is some additional description",
       notes: "123",
       tags: ["v0.1.0", "v2.1.0"],
-      committedTimestamp: timestampInSeconds * 1000,
+      committedTimestamp: 1633041877 * 1000,
       author: {
         name: "Rick Sanchez",
         email: "rick.sanchez@show-me-what-got.com",
@@ -65,9 +60,9 @@ describe("git execa client", () => {
       },
     };
     const expectedFormat = ["%H", "%s", "%b", "%N", "%D", "%ct", "%an", "%ae", "%cn", "%ce"];
-    const delimiter = ":<>:";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       const formattedLog = [
         commit.hash,
         commit.subject,
@@ -90,11 +85,11 @@ describe("git execa client", () => {
 
     expect(await gitClient.commits(expectedRange)).toStrictEqual([commit]);
 
-    expect(execute).toBeCalledWith(
+    expect(gitClient.execa).toBeCalledWith(
       "git",
       ["log", expectedRange, `--pretty=format:${expectedFormat.join(delimiter)}:++:`],
       {
-        cwd: expected.workingDirectory,
+        cwd: STUB_CONFIG.workingDirectory,
       },
     );
   });
@@ -102,8 +97,9 @@ describe("git execa client", () => {
   test("ref hash", async () => {
     const ref = "HEAD";
     const expectedHash = "123";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: expectedHash,
       });
@@ -111,16 +107,17 @@ describe("git execa client", () => {
 
     expect(await gitClient.refHash(ref)).toStrictEqual(expectedHash);
 
-    expect(execute).toBeCalledWith("git", ["rev-parse", ref], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["rev-parse", ref], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("ref name", async () => {
     const ref = "HEAD";
     const expectedName = "main";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: expectedName,
       });
@@ -128,15 +125,16 @@ describe("git execa client", () => {
 
     expect(await gitClient.refName(ref)).toStrictEqual(expectedName);
 
-    expect(execute).toBeCalledWith("git", ["rev-parse", "--abbrev-ref", ref], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["rev-parse", "--abbrev-ref", ref], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("cli version", async () => {
     const expectedVersion = "2.7.0";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: `git version ${expectedVersion}`,
       });
@@ -144,8 +142,8 @@ describe("git execa client", () => {
 
     expect(await gitClient.cliVersion()).toStrictEqual(expectedVersion);
 
-    expect(execute).toBeCalledWith("git", ["--version"], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["--version"], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
@@ -156,14 +154,15 @@ describe("git execa client", () => {
       name: "v0.1.0",
       hash: "c658ea3e060490dced90dfb34c018d88b8e797f9",
     };
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementationOnce(() => {
+    gitClient.execa.mockImplementationOnce(() => {
       return Promise.resolve({
         stdout: "git version 2.7.0",
       });
     });
 
-    execute.mockImplementationOnce(() => {
+    gitClient.execa.mockImplementationOnce(() => {
       return Promise.resolve({
         stdout: `${expectedTag.name}${delimiter}${expectedTag.hash}`,
       });
@@ -171,11 +170,11 @@ describe("git execa client", () => {
 
     expect(await gitClient.mergedTags(expectedRef)).toEqual([expectedTag]);
 
-    expect(execute).toBeCalledWith(
+    expect(gitClient.execa).toBeCalledWith(
       "git",
       ["tag", `--merged=${expectedRef}`, `--format=%(refname:strip=2)${delimiter}%(objectname)`],
       {
-        cwd: expected.workingDirectory,
+        cwd: STUB_CONFIG.workingDirectory,
       },
     );
   });
@@ -183,8 +182,9 @@ describe("git execa client", () => {
   test("remote tag hash", async () => {
     const tagName = "v1.0.0";
     const expectedHash = "1234";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: `${expectedHash}\trefs/tags/${tagName}`,
       });
@@ -192,16 +192,17 @@ describe("git execa client", () => {
 
     expect(await gitClient.remoteTagHash(tagName)).toStrictEqual(expectedHash);
 
-    expect(execute).toBeCalledWith("git", ["ls-remote", expected.remote, "-t", `refs/tags/${tagName}`], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["ls-remote", STUB_CONFIG.remote, "-t", `refs/tags/${tagName}`], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("remote branch hash", async () => {
     const branchName = "v1.0.0";
     const expectedHash = "1234";
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: `${expectedHash}\trefs/heads/${branchName}`,
       });
@@ -209,45 +210,44 @@ describe("git execa client", () => {
 
     expect(await gitClient.remoteBranchHash(branchName)).toStrictEqual(expectedHash);
 
-    expect(execute).toBeCalledWith("git", ["ls-remote", expected.remote, "-h", `refs/heads/${branchName}`], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["ls-remote", STUB_CONFIG.remote, "-h", `refs/heads/${branchName}`], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("remote tag hash is null", async () => {
     const tagName = "v1.0.0";
+    const gitClient = new GitExecaClientStub();
 
     expect(await gitClient.remoteTagHash(tagName)).toStrictEqual(null);
 
-    expect(execute).toBeCalledWith("git", ["ls-remote", expected.remote, "-t", `refs/tags/${tagName}`], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["ls-remote", STUB_CONFIG.remote, "-t", `refs/tags/${tagName}`], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("remote branch hash is null", async () => {
     const tagName = "v1.0.0";
+    const gitClient = new GitExecaClientStub();
 
     expect(await gitClient.remoteBranchHash(tagName)).toStrictEqual(null);
 
-    expect(execute).toBeCalledWith("git", ["ls-remote", expected.remote, "-h", `refs/heads/${tagName}`], {
-      cwd: expected.workingDirectory,
+    expect(gitClient.execa).toBeCalledWith("git", ["ls-remote", STUB_CONFIG.remote, "-h", `refs/heads/${tagName}`], {
+      cwd: STUB_CONFIG.workingDirectory,
     });
   });
 
   test("merged tags throws when cli version < 2.7.0", async () => {
     const cliVersion = "2.6.0";
     const expectedError = new Error(`Git version >= 2.7.0 is required. Found ${cliVersion}.`);
+    const gitClient = new GitExecaClientStub();
 
-    execute.mockImplementation(() => {
+    gitClient.execa.mockImplementation(() => {
       return Promise.resolve({
         stdout: `git version ${cliVersion}`,
       });
     });
 
-    const error = await gitClient.mergedTags("HEAD").catch((e) => {
-      return e;
-    });
-
-    expect(error).toEqual(expectedError);
+    await expect(gitClient.mergedTags("HEAD")).rejects.toEqual(expectedError);
   });
 });

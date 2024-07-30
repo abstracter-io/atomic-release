@@ -55,7 +55,6 @@ const strategyConfig = (): SDK.GithubNpmPackageStrategyConfig => {
     workingDirectory: WORKING_DIRECTORY,
     changelogFilePath: `${WORKING_DIRECTORY}/CHANGELOG.md`,
     releaseBranchNames: new Set([STABLE_BRANCH_NAME, PRE_RELEASE_BRANCH_NAME]),
-    regenerateChangelog: true,
     githubPersonalAccessToken: 'github-personal-access-token',
   };
 };
