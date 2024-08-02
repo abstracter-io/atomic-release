@@ -1,5 +1,5 @@
-import { Logger } from "./logger";
-import { processStdoutLogger } from "./process-stdout-logger";
+import { Logger } from "./logger.js";
+import { processStdoutLogger } from "./process-stdout-logger.js";
 
 type CommandConfig = {
   logger?: Logger;

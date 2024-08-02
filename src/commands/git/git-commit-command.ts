@@ -1,5 +1,5 @@
 import parseAuthor from "parse-author";
-import { ExecaCommand, ExecCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command.js";
 
 type GitCommitCommandConfig = ExecCommandConfig & {
   actor?: string;

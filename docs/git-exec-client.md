@@ -1,6 +1,6 @@
 # GitExecaClient
 
-An implementation of the SDK [GitClient](./git-client.md) interface using node `child_process` module.
+An implementation of the SDK [GitClient](./git-client.md) interface using `node:child_process` module.
 
 ### Config
 

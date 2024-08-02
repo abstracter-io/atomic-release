@@ -1,6 +1,6 @@
 import fetchDefaults from "fetch-defaults";
 
-import { Command, CommandConfig } from "../sdk/command";
+import { Command, CommandConfig } from "../sdk/command.js";
 
 type Fetch = typeof fetch;
 

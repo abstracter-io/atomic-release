@@ -1,6 +1,6 @@
-import { Strategy, StrategyConfig } from "./strategy";
+import { Strategy, StrategyConfig } from "./strategy.js";
 
-import { GitClient } from "./git-client";
+import { GitClient } from "./git-client.js";
 
 type GitStrategyOptions = StrategyConfig & {
   gitClient: GitClient;

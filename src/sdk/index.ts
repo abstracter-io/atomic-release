@@ -1,16 +1,16 @@
-export * from "./command";
+export * from "./command.js";
 
-export * from "./process-stdout-logger";
+export * from "./process-stdout-logger.js";
 
-export * from "./git-exec-client";
+export * from "./git-exec-client.js";
 
-export * from "./git-trunk-release";
-export * from "./git-tag-based-release";
+export * from "./git-trunk-release.js";
+export * from "./git-tag-based-release.js";
 
-export * from "./strategy";
-export * from "./git-strategy";
-export * from "./github-npm-package-strategy";
+export * from "./strategy.js";
+export * from "./git-strategy.js";
+export * from "./github-npm-package-strategy.js";
 
-export type * from "./logger";
-export type * from "./release";
-export type * from "./git-client";
+export type * from "./logger.js";
+export type * from "./release.js";
+export type * from "./git-client.js";

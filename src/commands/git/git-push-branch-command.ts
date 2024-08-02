@@ -1,4 +1,4 @@
-import { ExecaCommand, ExecCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command.js";
 
 type GitPushBranchCommandConfig = ExecCommandConfig & {
   remote?: string;

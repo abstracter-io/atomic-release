@@ -31,15 +31,6 @@ Default: `0.0.0`
 
 The initial version to use with the first release. (This must be a valid semantic version)
 
-#### stableBranchName
-
-Type: `string`
-
-The name of the branch from which stable versions are released.
-
-"v1.0.0" is a stable version  
-"v1.1.0-beta.0" is a pre release version ("beta");
-
 #### preReleaseBranches*
 
 Type: `object literal`  

@@ -11,8 +11,7 @@
   "files": [
     "build/**",
     "CHANGELOG.md",
-    "README.md",
-    "!tsconfig.tsbuildinfo"
+    "README.md"
   ],
   "repository": {
     "type": "git",
@@ -43,7 +42,7 @@
     "semantic version",
     "version management",
     "conventional version",
-    "conventional change log"
+    "conventional changelog"
   ],
   "license": "MIT",
   "devDependencies": {

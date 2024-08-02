@@ -49,7 +49,7 @@ describe("switch git branch", () => {
     expect(logger.info).toBeCalledWith(`Switched to branch '${CMD_CONFIG.branchName}'`);
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git switch ${CMD_CONFIG.branchName}`, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
   });
@@ -77,7 +77,7 @@ describe("switch git branch", () => {
 
     expect(commandStub.createChildProcess).not.toBeCalledWith(`git switch -c ${CMD_CONFIG.branchName}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -117,7 +117,7 @@ describe("switch git branch", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git branch -D ${CMD_CONFIG.branchName}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -150,7 +150,7 @@ describe("switch git branch", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git switch ${initialBranchName}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -181,7 +181,7 @@ describe("switch git branch", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git switch -c ${CMD_CONFIG.branchName}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 });

@@ -50,7 +50,7 @@ describe("publish npm package", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm publish --tag ${CMD_CONFIG.tag}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -69,7 +69,7 @@ describe("publish npm package", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm publish --registry ${expectedRegistry}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -107,7 +107,7 @@ describe("publish npm package", () => {
 
     expect(commandStub.createChildProcess).not.toBeCalledWith("npm unpublish", {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -120,7 +120,7 @@ describe("publish npm package", () => {
 
     expect(commandStub.createChildProcess).not.toBeCalledWith("npm unpublish", {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -135,7 +135,7 @@ describe("publish npm package", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm unpublish ${PACKAGE_NAME_AND_VERSION}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 });

@@ -51,7 +51,7 @@ describe("perform a git commit", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith("git reset HEAD~", {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -67,13 +67,13 @@ describe("perform a git commit", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git add ${filePaths.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git commit -m ${CMD_CONFIG.commitMessage}`, {
       env: {},
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -87,7 +87,7 @@ describe("perform a git commit", () => {
     await commandStub.do();
 
     expect(commandStub.createChildProcess).toBeCalledWith(`git commit -m ${CMD_CONFIG.commitMessage}`, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
       env: {
         GIT_COMMITTER_NAME: name,

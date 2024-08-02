@@ -1,5 +1,5 @@
-import { ChildProcess, exec as nodeExec } from "node:child_process";
-import type { ExecException, ExecOptions, ExecOptionsWithStringEncoding } from "node:child_process";
+import { text } from "node:stream/consumers";
+import { ChildProcess, spawn as nodeSpawn, SpawnOptionsWithoutStdio } from "node:child_process";
 
 type ExecaResult = {
   stdout: string;
@@ -7,25 +7,32 @@ type ExecaResult = {
   childProcess: ChildProcess;
 };
 
-// String only, for a more memory efficient usage, use spawn.
-const exec = (command: string, options: ExecOptionsWithStringEncoding): Promise<ExecaResult> => {
+const exec = (cmd: string, options: SpawnOptionsWithoutStdio): Promise<ExecaResult> => {
   return new Promise((resolve, reject) => {
-    const childProcess = nodeExec(command, options, (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
-      }
-      else {
-        resolve({ childProcess, stdout, stderr });
-      }
-    });
+    try {
+      const [command, ...args] = cmd.split(" ");
+      const childProcess = nodeSpawn(command, args, options);
+      const streams = Promise.all([
+        text(childProcess.stdout),
+        text(childProcess.stderr),
+      ]);
+
+      childProcess.on('error', reject);
+
+      childProcess.on('close', (_code) => {
+        streams
+          .then(([stdout, stderr]) => {
+            resolve({ childProcess, stdout, stderr });
+          })
+          .catch(err => reject(err));
+      });
+    }
+    catch (err) {
+      reject(err);
+    }
   });
-}
+};
 
-const isExecException = (err: Error): err is ExecException => {
-  return err.hasOwnProperty("code");
-}
+export { exec }
 
-export { exec, isExecException }
-
-export type { ExecException, ExecOptions, ExecaResult };
-
+export type { SpawnOptionsWithoutStdio as ExecOptions, ExecaResult };

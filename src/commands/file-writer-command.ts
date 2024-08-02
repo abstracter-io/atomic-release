@@ -1,7 +1,7 @@
 import fs from "fs";
-import to from "await-to-js";
+import { to } from "await-to-js";
 
-import { Command, CommandConfig } from "../sdk/command";
+import { Command, CommandConfig } from "../sdk/command.js";
 
 type FileWriterCommandConfig = CommandConfig & {
   content: string;

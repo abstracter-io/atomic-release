@@ -3,15 +3,15 @@ import { memo } from 'radash';
 import parseGitHubURL from 'parse-github-url';
 import { readPackageUp } from 'read-package-up';
 
-import { Logger } from "./logger";
-import { Release } from "./release";
-import { GitClient } from "./git-client";
-import { GitStrategy } from "./git-strategy";
-import { GitExecClient } from "./git-exec-client";
-import { gitTagBasedRelease } from "./git-tag-based-release";
-import { processStdoutLogger } from "./process-stdout-logger";
+import { Logger } from "./logger.js";
+import { Release } from "./release.js";
+import { GitClient } from "./git-client.js";
+import { GitStrategy } from "./git-strategy.js";
+import { GitExecClient } from "./git-exec-client.js";
+import { gitTagBasedRelease } from "./git-tag-based-release.js";
+import { processStdoutLogger } from "./process-stdout-logger.js";
 
-import * as Commands from "../commands";
+import * as Commands from "../commands/index.js";
 
 type GithubNpmPackageStrategyConfig = {
   logger?: Logger;

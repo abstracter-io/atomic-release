@@ -50,7 +50,7 @@ describe("create a git tag locally/remotely", () => {
     expect(logger.info).toBeCalledWith(`Created a local tag '${CMD_CONFIG.name}'`);
 
     expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
   });
@@ -62,12 +62,12 @@ describe("create a git tag locally/remotely", () => {
     await commandStub.do();
 
     expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
     expect(commandStub.createChildProcess).toBeCalledWith(createRemoteTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
@@ -89,12 +89,12 @@ describe("create a git tag locally/remotely", () => {
     const [error] = await to(commandStub.do());
 
     expect(commandStub.createChildProcess).toBeCalledWith(localTagExistsParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
     expect(commandStub.createChildProcess).not.toBeCalledWith(createLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
@@ -115,12 +115,12 @@ describe("create a git tag locally/remotely", () => {
     const [error] = await to(commandStub.do());
 
     expect(commandStub.createChildProcess).toBeCalledWith(remoteTagExistsParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
     expect(commandStub.createChildProcess).not.toBeCalledWith(createRemoteTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
@@ -136,7 +136,7 @@ describe("create a git tag locally/remotely", () => {
     await commandStub.undo();
 
     expect(commandStub.createChildProcess).toBeCalledWith(deleteLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
@@ -151,7 +151,7 @@ describe("create a git tag locally/remotely", () => {
     await commandStub.undo();
 
     expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
   });
@@ -164,12 +164,12 @@ describe("create a git tag locally/remotely", () => {
     await commandStub.undo();
 
     expect(commandStub.createChildProcess).toBeCalledWith(deleteLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
     expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
   });
@@ -195,7 +195,7 @@ describe("create a git tag locally/remotely", () => {
     await commandStub.undo();
 
     expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 
@@ -225,7 +225,7 @@ describe("create a git tag locally/remotely", () => {
     expect(error).toEqual(expectedError);
 
     expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
-      encoding: 'utf8',
+
       cwd: CMD_CONFIG.workingDirectory,
     });
 

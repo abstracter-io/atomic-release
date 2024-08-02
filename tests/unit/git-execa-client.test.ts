@@ -41,7 +41,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git log ${range} --pretty=format:${format}${delimiter}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -94,7 +94,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git log ${expectedRange} --pretty=format:${expectedFormat.join(delimiter)}:++:`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -115,7 +115,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git rev-parse ${ref}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -136,7 +136,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git rev-parse --abbrev-ref ${ref}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -156,7 +156,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith("git --version", {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -189,7 +189,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git tag --merged=${expectedRef} --format=%(refname:strip=2)${delimiter}%(objectname)`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -210,7 +210,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git ls-remote ${STUB_CONFIG.remote} -t refs/tags/${tagName}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -231,7 +231,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git ls-remote ${STUB_CONFIG.remote} -h refs/heads/${branchName}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -243,7 +243,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git ls-remote ${STUB_CONFIG.remote} -t refs/tags/${tagName}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 
@@ -255,7 +255,7 @@ describe("git execa client", () => {
 
     expect(gitClient.exec).toBeCalledWith(`git ls-remote ${STUB_CONFIG.remote} -h refs/heads/${tagName}`, {
       cwd: STUB_CONFIG.workingDirectory,
-      encoding: "utf8",
+
     });
   });
 

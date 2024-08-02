@@ -1,10 +1,10 @@
-import to from "await-to-js";
+import { to } from "await-to-js";
 
-import { Logger } from "./logger";
-import { Release } from "./release";
-import { Command } from "./command";
+import { Logger } from "./logger.js";
+import { Release } from "./release.js";
+import { Command } from "./command.js";
 
-import { timer } from "../utils/timer";
+import { timer } from "../utils/timer.js";
 
 type StrategyConfig = {
   logger: Logger;

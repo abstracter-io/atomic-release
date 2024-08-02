@@ -1,6 +1,6 @@
 import uriTemplates from "uri-templates";
 
-import { HttpCommand, HttpCommandConfig } from "../http-command";
+import { HttpCommand, HttpCommandConfig } from "../http-command.js";
 
 const enum MimeTypes {
   V3 = "application/vnd.github.v3+json",

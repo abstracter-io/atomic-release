@@ -1,7 +1,7 @@
-import { exec, isExecException } from '../utils/exec';
-import { Command, CommandConfig } from "../sdk/command";
+import { exec } from '../utils/exec.js';
+import { Command, CommandConfig } from "../sdk/command.js";
 
-import type { ExecOptions, ExecaResult } from '../utils/exec';
+import type { ExecOptions, ExecaResult } from '../utils/exec.js';
 
 type ExecCommandConfig = CommandConfig & {
   // when true, stderr / stdout are not piped to parent process
@@ -29,27 +29,14 @@ abstract class ExecaCommand<T extends ExecCommandConfig> extends Command<T> {
   protected createChildProcess = exec;
 
   protected async exec(command: string, options?: ExecOptions): Promise<ExecaResult> {
-    try {
-      const result = await this.createChildProcess(command, {
-        cwd: this.config.workingDirectory,
-        encoding: 'utf8',
-        ...options,
-      });
+    const result = await this.createChildProcess(command, {
+      cwd: this.config.workingDirectory,
+      ...options,
+    });
 
-      this.logStd(result.stdout.trimEnd(), result.stderr.trimEnd());
+    this.logStd(result.stdout.trimEnd(), result.stderr.trimEnd());
 
-      return result;
-    }
-    catch (e) {
-      if (isExecException(e)) {
-        const stdout = e.stdout?.trimEnd() ?? '';
-        const stderr = e.stderr?.trimEnd() ?? '';
-
-        this.logStd(stdout, stderr);
-      }
-
-      throw e;
-    }
+    return result;
   }
 }
 

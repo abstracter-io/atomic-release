@@ -1,4 +1,4 @@
-import { NpmCommand, NpmCommandConfig } from "./npm-command";
+import { NpmCommand, NpmCommandConfig } from "./npm-command.js";
 
 type NpmPublishPackageCommandConfig = NpmCommandConfig & {
   tag?: string;

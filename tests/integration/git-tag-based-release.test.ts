@@ -1,9 +1,8 @@
-// @ts-expect-error no types
 import conventionalChangelogPreset from "conventional-changelog-conventionalcommits";
 import { vitest, describe, test, expect, beforeEach } from 'vitest'
 
-import { SDK } from "../../src/index";
-import { Stubs } from "../stubs";
+import { SDK } from "../../src/index.js";
+import { Stubs } from "../stubs.js";
 
 const HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
 const LOGGER = new Stubs.LoggerStub();
@@ -151,7 +150,7 @@ describe("git tag based release", () => {
 
     expect(await release.getNextVersion()).toStrictEqual("0.1.1");
 
-    expect(LOGGER.info).toBeCalledWith("Found 1 new commits");
+    expect(LOGGER.info).toBeCalledWith("Found 1 new commit(s)");
   });
 
   test("next version minor is bumped", async () => {

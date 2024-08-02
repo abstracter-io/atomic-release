@@ -1,6 +1,6 @@
 import colors from "colors";
 
-import { Logger } from "./logger";
+import { Logger } from "./logger.js";
 
 type LogLevel = {
   name: string;

@@ -1,8 +1,8 @@
 import semver from "semver";
 
-import { exec, ExecOptions } from "../utils/exec";
+import { exec, ExecOptions } from "../utils/exec.js";
 
-import type { GitClient, MergedTag, Commit } from "./git-client";
+import type { GitClient, MergedTag, Commit } from "./git-client.js";
 
 type GitExecClientConfig = {
   remote: string;
@@ -24,7 +24,6 @@ class GitExecClient implements GitClient {
   protected cli(args: string, config?: ExecOptions) {
     return this.exec(`git ${args}`, {
       cwd: this.config.workingDirectory,
-      encoding: 'utf8',
       ...config,
     });
   }

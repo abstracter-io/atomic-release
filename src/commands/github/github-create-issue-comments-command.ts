@@ -1,4 +1,4 @@
-import { GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command";
+import { GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command.js";
 
 type CommentRestResource = Record<string, unknown>;
 

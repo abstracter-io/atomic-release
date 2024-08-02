@@ -4,10 +4,10 @@ import { loadPreset } from "conventional-changelog-preset-loader";
 import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
 import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
 
-import { Logger } from "./logger";
-import { Release } from "./release";
-import { processStdoutLogger } from "./process-stdout-logger";
-import { GitExecClient, MergedTag } from "./git-exec-client";
+import { Logger } from "./logger.js";
+import { Release } from "./release.js";
+import { processStdoutLogger } from "./process-stdout-logger.js";
+import { GitExecClient, MergedTag } from "./git-exec-client.js";
 
 type ConventionalPreset = {
   parser: ParserOptions;
@@ -127,7 +127,7 @@ const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Options>
     remote,
     gitClient,
     workingDirectory,
-    logger: config.logger ?? processStdoutLogger({ name: "gitConventionalRelease" }),
+    logger: config.logger ?? processStdoutLogger({ name: "gitTagBasedRelease" }),
     initialVersion: config.initialVersion ?? "0.0.0",
     preReleaseBranches: config.preReleaseBranches ?? {},
     isReleaseCommit: config.isReleaseCommit ?? isReleaseCommit,
@@ -308,7 +308,7 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
     const releaseCommits = conventionalCommits.filter(opt.isReleaseCommit);
     const totalFiltered = conventionalCommits.length - releaseCommits.length;
 
-    logger.info(`Found ${conventionalCommits.length} new commits`);
+    logger.info(`Found ${conventionalCommits.length} new commit(s)`);
 
     logger.info(`Filtered ${totalFiltered} commit(s)`);
 

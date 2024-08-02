@@ -1,4 +1,4 @@
-import { MimeTypes, GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command";
+import { MimeTypes, GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command.js";
 
 type PullRequestRestResource = Record<string, unknown>;
 

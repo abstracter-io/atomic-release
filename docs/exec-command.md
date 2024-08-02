@@ -1,6 +1,6 @@
 # ExecaCommand
 
-An abstract class with a method to create a child process using node `child_process` module.
+An abstract class with a method to create a child process using `node:child_process` module.
 
 ### Config
 

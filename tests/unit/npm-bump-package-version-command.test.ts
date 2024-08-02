@@ -78,7 +78,7 @@ describe("bumping package.json version", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm version ${expectedVersion} --no-git-tag-version`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 
@@ -117,7 +117,7 @@ describe("bumping package.json version", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
 
     expect(logger.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
@@ -137,7 +137,7 @@ describe("bumping package.json version", () => {
 
     expect(commandStub.createChildProcess).toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
 
     expect(logger.info).toBeCalledWith(`Reverted '${PACKAGE_JSON.name}' version back to '${PACKAGE_JSON.version}'`);
@@ -159,7 +159,7 @@ describe("bumping package.json version", () => {
 
     expect(commandStub.createChildProcess).not.toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
-      encoding: 'utf8',
+
     });
   });
 });

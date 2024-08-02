@@ -1,7 +1,7 @@
 import fs from "fs";
 import type { PackageJson } from "type-fest";
 
-import { ExecaCommand, ExecCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command.js";
 
 type NpmCommandConfig = ExecCommandConfig;
 

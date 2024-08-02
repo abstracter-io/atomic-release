@@ -1,6 +1,6 @@
-import to from "await-to-js";
+import { to } from "await-to-js";
 
-import { ExecaCommand, ExecCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command.js";
 
 type GitTagCommandConfig = ExecCommandConfig & {
   name: string;

@@ -1,5 +1,3 @@
-const { atomicRelease } = require("./atomic-release");
+import { SDK } from "../build/index.js";
 
-atomicRelease().catch((e) => {
-  console.error(e);
-});
+await SDK.githubNpmPackageStrategy().then(strategy => strategy.run());

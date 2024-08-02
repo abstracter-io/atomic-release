@@ -3,10 +3,10 @@ import { loadPreset } from "conventional-changelog-preset-loader";
 import { Commit as ConventionalCommit, CommitParser, ParserOptions } from "conventional-commits-parser";
 import { writeChangelogString, Options as WriterOptions, Context as WriterContext } from "conventional-changelog-writer";
 
-import { Logger } from "./logger";
-import { Release } from "./release";
-import { GitExecClient } from "./git-exec-client";
-import { processStdoutLogger } from "./process-stdout-logger";
+import { Logger } from "./logger.js";
+import { Release } from "./release.js";
+import { GitExecClient } from "./git-exec-client.js";
+import { processStdoutLogger } from "./process-stdout-logger.js";
 
 type ConventionalPreset = {
   parser: ParserOptions;

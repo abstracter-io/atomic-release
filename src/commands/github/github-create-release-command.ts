@@ -1,11 +1,11 @@
 import mime from "mime";
 import fs from "node:fs";
 import path from "node:path";
-import to from "await-to-js";
+import { to } from "await-to-js";
 import { Readable } from "node:stream";
 
-import { timer } from "../../utils/timer";
-import { GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command";
+import { timer } from "../../utils/timer.js";
+import { GithubHttpCommand, GithubHttpCommandConfig } from "./github-http-command.js";
 
 type File = {
   mimeType: string;
