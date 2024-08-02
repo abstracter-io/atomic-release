@@ -1,6 +1,6 @@
 # GithubCreateReleaseCommand
 
-A github command that creates a github release.
+A command that creates a release using GitHub API.
 
 ### Config
 

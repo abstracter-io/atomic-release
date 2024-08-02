@@ -1,6 +1,6 @@
 # GithubCreatePullRequestCommand
 
-A github command that creates a pull request.
+A command that created a pull request using GitHub API.
 
 ### Config
 

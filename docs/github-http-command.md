@@ -1,6 +1,6 @@
 # GithubHttpCommand
 
-An abstract class with a method to expand github URLs and perform HTTP requests using the fetch API.
+An abstract class with a method to expand GitHub URLs and perform HTTP requests using the fetch API.
 
 ### Config
 
