@@ -1,7 +1,6 @@
 # gitTagBasedRelease
 
-An implementation of the SDK [Release](./release.md) interface which uses git tags  
-and [conventional-changelog packages](https://git.io/JKOLR)
+An implementation of the SDK [Release](./release.md) interface which uses git tags and [conventional-changelog packages](https://git.io/JKOLR)
 
 ### Config
 
