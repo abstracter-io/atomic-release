@@ -2,7 +2,7 @@ export * from "./command";
 
 export * from "./process-stdout-logger";
 
-export * from "./git-execa-client";
+export * from "./git-exec-client";
 
 export * from "./git-trunk-release";
 export * from "./git-tag-based-release";

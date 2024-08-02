@@ -10,7 +10,7 @@ const LOGGER = new Stubs.LoggerStub();
 const STABLE_BRANCH_NAME = "main";
 const PRE_RELEASE_BRANCH_NAME = "beta";
 
-class GitClientStub extends SDK.GitExecaClient {
+class GitClientStub extends SDK.GitExecClient {
   constructor() {
     super({ workingDirectory: process.cwd() });
   }

@@ -1,256 +1,271 @@
 import to from "await-to-js";
-import { vitest, describe, expect, test, beforeEach } from "vitest";
+import { ChildProcess } from "node:child_process";
+import { vitest, describe, expect, test } from "vitest";
 
 import { Stubs } from "../stubs";
 import { Commands } from "../../src";
 
-const execute = vitest.fn();
-
-const LOGGER = new Stubs.LoggerStub();
-
-vitest.mock("execa", () => {
-  return {
-    default: async (...args) => {
-      return execute(...args);
-    }
-  };
-});
+const CMD_CONFIG: Commands.GitTagCommandConfig = {
+  logger: Stubs.NoopLogger.INSTANCE,
+  remote: Date.now().toString(),
+  workingDirectory: "/home/super.mario",
+  name: "version-123-generated-files",
+};
 
 class GitTagCommandStub extends Commands.GitTagCommand {
-  public static readonly CMD_CONFIG: Commands.GitTagCommandConfig = {
-    logger: LOGGER,
-    remote: Date.now().toString(),
-    workingDirectory: "/home/super.mario",
-    name: "version-123-generated-files",
-  };
-
   constructor(config?: Partial<Commands.GitTagCommandConfig>) {
-    super(Object.assign({}, GitTagCommandStub.CMD_CONFIG, config));
+    super({ ...CMD_CONFIG, ...config });
   }
+
+  public createChildProcess = vitest.fn(async (_args: any) => {
+    return {
+      stdout: "",
+      stderr: "",
+      childProcess: Stubs.childProcess(),
+    };
+  })
 }
 
 describe("create a git tag locally/remotely", () => {
-  const expected = GitTagCommandStub.CMD_CONFIG;
+  const localTagExistsParameters = `git tag --list ${CMD_CONFIG.name}`;
 
-  const localTagExistsParameters = [
-    "git",
-    ["tag", "--list", expected.name],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  const remoteTagExistsParameters = `git ls-remote ${CMD_CONFIG.remote} refs/tags/${CMD_CONFIG.name}`;
 
-  const remoteTagExistsParameters = [
-    "git",
-    ["ls-remote", expected.remote, `refs/tags/${expected.name}`],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  const createLocalTagParameters = `git tag ${CMD_CONFIG.name}`;
 
-  const createLocalTagParameters = [
-    "git",
-    ["tag", expected.name],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  const createRemoteTagParameters = `git push ${CMD_CONFIG.remote} refs/tags/${CMD_CONFIG.name}`;
 
-  const createRemoteTagParameters = [
-    "git",
-    ["push", expected.remote, `refs/tags/${expected.name}`],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  const deleteLocalTagParameters = `git tag --delete ${CMD_CONFIG.name}`;
 
-  const deleteLocalTagParameters = [
-    "git",
-    ["tag", "--delete", expected.name],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  const deleteRemoteTagParameters = `git push ${CMD_CONFIG.remote} --delete refs/tags/${CMD_CONFIG.name}`;
 
-  const deleteRemoteTagParameters = [
-    "git",
-    ["push", expected.remote, "--delete", `refs/tags/${expected.name}`],
-    {
-      cwd: expected.workingDirectory,
-    },
-  ];
+  test("tag is created locally", async () => {
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitTagCommandStub({
+      logger
+    });
 
-  beforeEach(() => {
-    execute.mockImplementation((_, args) => {
-      return Promise.resolve({
-        stdout: "",
-        exitCode: args[0] === "show-ref" ? 1 : 0,
-      });
+    await commandStub.do();
+
+    expect(logger.info).toBeCalledWith(`Created a local tag '${CMD_CONFIG.name}'`);
+
+    expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
     });
   });
 
-  test("tag is created locally", async () => {
-    const commandStub = new GitTagCommandStub();
-
-    await commandStub.do();
-
-    expect(execute).toBeCalledWith(...createLocalTagParameters);
-    expect(LOGGER.info).toBeCalledWith(`Created a local tag '${expected.name}'`);
-  });
-
   test("tag is pushed to remote", async () => {
-    const commandStub = new GitTagCommandStub();
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitTagCommandStub({ logger });
 
     await commandStub.do();
 
-    expect(execute).toHaveBeenNthCalledWith(3, ...createLocalTagParameters);
+    expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
 
-    expect(execute).toHaveBeenNthCalledWith(4, ...createRemoteTagParameters);
+    expect(commandStub.createChildProcess).toBeCalledWith(createRemoteTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
 
-    expect(LOGGER.info).toBeCalledWith(`Pushed tag '${expected.name}' to remote '${expected.remote}'`);
+    expect(logger.info).toBeCalledWith(`Pushed tag '${CMD_CONFIG.name}' to remote '${CMD_CONFIG.remote}'`);
   });
 
   test("tag is not created when local tag exists", async () => {
     const commandStub = new GitTagCommandStub();
 
-    execute.mockClear().mockImplementation(async (_, args) => {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
       return {
-        stdout: args[0] === "ls-remote" ? "" : "v2",
+        stderr: '',
+        stdout: cmd.includes("ls-remote") ? "" : "v2",
         exitCode: 0,
+        childProcess: Stubs.childProcess(),
       };
     });
 
     const [error] = await to(commandStub.do());
 
-    expect(execute).toBeCalledWith(...localTagExistsParameters);
-    expect(execute).not.toBeCalledWith(...createLocalTagParameters);
-    expect(error).toEqual(new Error(`A local tag named '${expected.name}' already exists`));
+    expect(commandStub.createChildProcess).toBeCalledWith(localTagExistsParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
+
+    expect(commandStub.createChildProcess).not.toBeCalledWith(createLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
+
+    expect(error).toEqual(new Error(`A local tag named '${CMD_CONFIG.name}' already exists`));
   });
 
   test("tag is not created when remote tag exists", async () => {
     const commandStub = new GitTagCommandStub();
 
-    execute.mockClear().mockImplementation((_, args) => {
-      return Promise.resolve({
-        stdout: args[0] === "ls-remote" ? "exists" : "",
-      });
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      return {
+        stderr: "",
+        stdout: cmd.includes("ls-remote") ? "exists" : "",
+        childProcess: Stubs.childProcess(),
+      };
     });
 
     const [error] = await to(commandStub.do());
 
-    expect(execute).toBeCalledWith(...remoteTagExistsParameters);
+    expect(commandStub.createChildProcess).toBeCalledWith(remoteTagExistsParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
 
-    expect(execute).not.toBeCalledWith(...createRemoteTagParameters);
+    expect(commandStub.createChildProcess).not.toBeCalledWith(createRemoteTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
 
-    expect(error).toEqual(new Error(`A tag named '${expected.name}' already exists in remote '${expected.remote}'`));
+    expect(error).toEqual(new Error(`A tag named '${CMD_CONFIG.name}' already exists in remote '${CMD_CONFIG.remote}'`));
   });
 
   test("undo deletes local tag when it was created", async () => {
-    const commandStub = new GitTagCommandStub();
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitTagCommandStub({ logger });
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(execute).toBeCalledWith(...deleteLocalTagParameters);
-    expect(LOGGER.info).toBeCalledWith(`Deleted local tag '${expected.name}'`);
+    expect(commandStub.createChildProcess).toBeCalledWith(deleteLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
+
+    expect(logger.info).toBeCalledWith(`Deleted local tag '${CMD_CONFIG.name}'`);
   });
 
   test("undo deletes remote tag when it was created", async () => {
     const commandStub = new GitTagCommandStub();
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(execute).toBeCalledWith(...deleteRemoteTagParameters);
+    expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
   });
 
   test("undo deletes local tag before deleting remote tag", async () => {
     const commandStub = new GitTagCommandStub();
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    const undoCalls = execute.mock.calls.slice(-2);
+    expect(commandStub.createChildProcess).toBeCalledWith(deleteLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
 
-    expect(undoCalls[0]).toEqual(deleteLocalTagParameters);
-    expect(undoCalls[1]).toEqual(deleteRemoteTagParameters);
+    expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
   });
 
-  test("undo deletes remote tag when deleting local tag fail", async () => {
-    const commandStub = new GitTagCommandStub();
+  test("undo deletes remote tag when deleting local tag failed", async () => {
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitTagCommandStub({ logger });
 
-    execute.mockClear().mockImplementation(async (_, args) => {
-      if (args.join(" ") === (deleteLocalTagParameters[1] as string[]).join(" ")) {
-        throw new Error();
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd !== deleteLocalTagParameters) {
+        return {
+          stdout: "",
+          stderr: "",
+          childProcess: Stubs.childProcess(),
+        };
       }
 
-      return {
-        exitCode: 0,
-        stdout: "",
-      };
+      throw new Error();
     });
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(execute).toBeCalledWith(...deleteRemoteTagParameters);
-    expect(LOGGER.error).toBeCalledWith(new Error(`Failed to delete local tag '${expected.name}'`));
+    expect(commandStub.createChildProcess).toBeCalledWith(deleteRemoteTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
+
+    expect(logger.error).toBeCalledWith(new Error(`Failed to delete local tag '${CMD_CONFIG.name}'`));
   });
 
   test("remote tag is not created when creating local tag fails", async () => {
     const expectedError = new Error();
     const commandStub = new GitTagCommandStub();
 
-    execute.mockClear().mockImplementation(async (_, args) => {
-      if (args.join(" ") === `tag ${expected.name}`) {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === createLocalTagParameters) {
         throw expectedError;
       }
 
       return {
+        stderr: "",
         stdout: "",
-        exitCode: 0,
+        childProcess: new ChildProcess(),
       };
     });
 
-    const [error] = await to(commandStub.do());
+    const error = await commandStub.do().catch(e => e);
+
     await commandStub.undo();
 
     expect(error).toEqual(expectedError);
-    expect(execute).toBeCalledWith(...createLocalTagParameters);
-    expect(execute).not.toBeCalledWith(...createRemoteTagParameters);
+
+    expect(commandStub.createChildProcess).toBeCalledWith(createLocalTagParameters, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
+    });
+
+    expect(commandStub.createChildProcess).not.toBeCalledWith(createRemoteTagParameters, expect.anything());
   });
 
   test("undo does not deletes local tag when it was not created", async () => {
     const commandStub = new GitTagCommandStub();
 
-    execute.mockClear().mockImplementation(async (_, args) => {
-      if (args.join(" ") === `tag ${expected.name}`) {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd.includes(`tag ${CMD_CONFIG.name}`)) {
         throw new Error();
       }
 
       return {
-        exitCode: 0,
+        stderr: "",
         stdout: "",
+        childProcess: new ChildProcess(),
       };
     });
 
     await to(commandStub.do());
+
     await commandStub.undo();
 
-    expect(execute).not.toBeCalledWith(...deleteLocalTagParameters);
+    expect(commandStub.createChildProcess).not.toBeCalledWith(deleteLocalTagParameters);
   });
 
   test("undo does not deletes remote tag when it was not created", async () => {
     const commandStub = new GitTagCommandStub();
 
-    execute.mockClear().mockImplementation(async (_, args) => {
-      if (args.join(" ") === `push ${expected.remote} refs/tags/${expected.name}`) {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd.join(`push ${CMD_CONFIG.remote} refs/tags/${CMD_CONFIG.name}`)) {
         throw new Error();
       }
 
       return {
-        exitCode: 0,
         stdout: "",
+        stderr: "",
+        childProcess: new ChildProcess(),
       };
     });
 
@@ -258,6 +273,6 @@ describe("create a git tag locally/remotely", () => {
 
     await commandStub.undo();
 
-    await expect(execute).not.toBeCalledWith(...deleteRemoteTagParameters);
+    expect(commandStub.createChildProcess).not.toBeCalledWith(deleteRemoteTagParameters);
   });
 });

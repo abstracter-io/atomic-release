@@ -5,7 +5,7 @@ import { writeChangelogString, Options as WriterOptions, Context as WriterContex
 
 import { Logger } from "./logger";
 import { Release } from "./release";
-import { GitExecaClient } from "./git-execa-client";
+import { GitExecClient } from "./git-exec-client";
 import { processStdoutLogger } from "./process-stdout-logger";
 
 type ConventionalPreset = {
@@ -17,7 +17,7 @@ type ConventionalPreset = {
 type GitTrunkReleaseConfig = {
   logger?: Logger;
 
-  gitClient?: GitExecaClient;
+  gitClient?: GitExecClient;
 
   remote?: string;
 
@@ -37,7 +37,7 @@ type Options = Required<GitTrunkReleaseConfig>;
 const defaultConfig = async (config: GitTrunkReleaseConfig): Promise<Options> => {
   const workingDirectory = config.workingDirectory ?? process.cwd();
   const remote = config.remote ?? "origin";
-  const gitClient = config.gitClient ?? new GitExecaClient({
+  const gitClient = config.gitClient ?? new GitExecClient({
     remote,
     workingDirectory,
   });

@@ -17,7 +17,7 @@ const NOOP_LOGGER: SDK.Logger = {
   debug() {},
 };
 
-class GitClientStub extends SDK.GitExecaClient {
+class GitClientStub extends SDK.GitExecClient {
   constructor() {
     super({ workingDirectory: process.cwd() });
   }

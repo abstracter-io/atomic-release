@@ -7,7 +7,7 @@ import { writeChangelogString, Options as WriterOptions, Context as WriterContex
 import { Logger } from "./logger";
 import { Release } from "./release";
 import { processStdoutLogger } from "./process-stdout-logger";
-import { GitExecaClient, MergedTag } from "./git-execa-client";
+import { GitExecClient, MergedTag } from "./git-exec-client";
 
 type ConventionalPreset = {
   parser: ParserOptions;
@@ -20,7 +20,7 @@ type GitTagBasedReleaseConfig = {
 
   remote?: string;
 
-  gitClient?: GitExecaClient;
+  gitClient?: GitExecClient;
 
   initialVersion?: string;
 
@@ -77,7 +77,7 @@ const clean = (version: string) => {
 const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Options> => {
   const remote = config.remote ?? "origin";
   const workingDirectory = config.workingDirectory ?? process.cwd();
-  const gitClient = config.gitClient ?? new GitExecaClient({
+  const gitClient = config.gitClient ?? new GitExecClient({
     remote,
     workingDirectory,
   });

@@ -1,9 +1,9 @@
 import fs from "fs";
 import type { PackageJson } from "type-fest";
 
-import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command";
 
-type NpmCommandConfig = ExecaCommandConfig;
+type NpmCommandConfig = ExecCommandConfig;
 
 abstract class NpmCommand<T extends NpmCommandConfig> extends ExecaCommand<T> {
   protected readonly packageJsonFilePath: string;

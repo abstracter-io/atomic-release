@@ -1,6 +1,7 @@
 import { vitest } from "vitest";
 
 import { SDK } from "../src/index";
+import { ChildProcess } from "node:child_process";
 
 type StrategyStubConfig = SDK.StrategyConfig & {
   test: number;
@@ -25,8 +26,17 @@ class LoggerStub implements SDK.Logger {
   debug = vitest.fn();
 }
 
+class NoopLogger implements SDK.Logger {
+  public static INSTANCE = new NoopLogger();
+
+  info = () => {};
+  warn = () => {};
+  error = () => {};
+  debug = () => {};
+}
+
 class ReleaseStub implements SDK.Release {
-  getVersions = vitest.fn();
+  listVersions = vitest.fn();
   getChangelog = vitest.fn();
   getNextVersion = vitest.fn();
   getMentionedIssues = vitest.fn();
@@ -40,7 +50,7 @@ class StrategyStub extends SDK.Strategy<StrategyStubConfig> {
   }
 }
 
-class GitClientStub extends SDK.GitExecaClient {
+class GitClientStub extends SDK.GitExecClient {
   constructor() {
     super({ workingDirectory: process.cwd() });
   }
@@ -58,11 +68,18 @@ class GitClientStub extends SDK.GitExecaClient {
 export const Stubs = {
   CommandA,
   CommandB,
-
   LoggerStub,
-
+  NoopLogger,
   ReleaseStub,
   StrategyStub,
-
   GitClientStub,
+
+  childProcess() {
+    const childProcess = new ChildProcess();
+
+    // @ts-ignore
+    childProcess.exitCode = 0;
+
+    return childProcess;
+  },
 }

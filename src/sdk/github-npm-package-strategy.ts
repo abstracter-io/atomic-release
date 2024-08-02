@@ -7,7 +7,7 @@ import { Logger } from "./logger";
 import { Release } from "./release";
 import { GitClient } from "./git-client";
 import { GitStrategy } from "./git-strategy";
-import { GitExecaClient } from "./git-execa-client";
+import { GitExecClient } from "./git-exec-client";
 import { gitTagBasedRelease } from "./git-tag-based-release";
 import { processStdoutLogger } from "./process-stdout-logger";
 
@@ -81,7 +81,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
     logger: config.logger ?? processStdoutLogger({ name: 'GithubNpmPackageStrategy' }),
     release: config.release ?? await createRelease(),
     gitActor: config.gitActor ?? process.env.RELEASE_ACTOR,
-    gitClient: config.gitClient ?? new GitExecaClient(), // TODO: This should be wrapped by a cache?
+    gitClient: config.gitClient ?? new GitExecClient(), // TODO: This should be wrapped by a cache?
     gitRemote: config.gitRemote ?? 'origin',
     workingDirectory: config.workingDirectory ?? process.cwd(),
     changelogFilePath: config.changelogFilePath ?? `${pkg.folderPath}/CHANGELOG.md`,

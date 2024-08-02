@@ -1,6 +1,6 @@
-import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command";
 
-type GitPushBranchCommandConfig = ExecaCommandConfig & {
+type GitPushBranchCommandConfig = ExecCommandConfig & {
   remote?: string;
 
   branchName: string;
@@ -28,11 +28,11 @@ class GitPushBranchCommand extends ExecaCommand<GitPushBranchCommandConfig> {
   }
 
   private async push(): Promise<void> {
-    await this.execa("git", ["push", "--set-upstream", this.remote, this.config.branchName]);
+    await this.exec(`git push --set-upstream ${this.remote} ${this.config.branchName}`);
   }
 
   private async remoteBranchExists(): Promise<boolean> {
-    const { stdout } = await this.execa("git", ["ls-remote", this.remote, this.config.branchName]);
+    const { stdout } = await this.exec(`git ls-remote ${this.remote} ${this.config.branchName}`);
 
     return stdout.length > 0;
   }

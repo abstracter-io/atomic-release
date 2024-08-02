@@ -22,22 +22,20 @@ class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionComma
   private initialVersion: string;
   private versionChanged: boolean;
 
+  private async versionCmd(arg: string): Promise<void> {
+    await this.exec(`npm version ${arg} --no-git-tag-version`);
+  }
+
   private async bumpVersion(): Promise<string> {
     const preReleaseId = this.config.preReleaseId;
 
-    await this.executeVersionCommand(this.config.version);
+    await this.versionCmd(this.config.version);
 
     if (preReleaseId) {
-      await this.executeVersionCommand(`prerelease --preid=${preReleaseId}`);
+      await this.versionCmd(`prerelease --preid=${preReleaseId}`);
     }
 
     return (await this.getPackageJson()).version as string;
-  }
-
-  private async executeVersionCommand(arg: string): Promise<void> {
-    await this.execa("npm", ["version", ...arg.split(" "), "--no-git-tag-version"], {
-      cwd: this.config.workingDirectory,
-    });
   }
 
   public async do(): Promise<void> {
@@ -67,7 +65,7 @@ class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionComma
       const { name } = await this.getPackageJson();
       const initialVersion = this.initialVersion;
 
-      await this.executeVersionCommand(initialVersion);
+      await this.versionCmd(initialVersion);
 
       this.logger.info(`Reverted '${name}' version back to '${initialVersion}'`);
     }

@@ -1,12 +1,7 @@
-import to from "await-to-js";
-import { vitest, describe, test, expect, beforeEach } from "vitest";
+import { vitest, describe, test, expect } from "vitest";
 
 import { Stubs } from "../stubs";
 import { Commands } from "../../src";
-
-const execa = vitest.fn();
-
-const LOGGER = new Stubs.LoggerStub();
 
 const PACKAGE_JSON = {
   private: false,
@@ -15,7 +10,7 @@ const PACKAGE_JSON = {
 };
 
 const CMD_CONFIG: Commands.NpmBumpPackageVersionCommandConfig = {
-  logger: LOGGER,
+  logger: Stubs.NoopLogger.INSTANCE,
 
   version: "0.2.0",
 
@@ -24,34 +19,24 @@ const CMD_CONFIG: Commands.NpmBumpPackageVersionCommandConfig = {
 
 class NpmBumpPackageVersionCommandStub extends Commands.NpmBumpPackageVersionCommand {
   public constructor(config?: Partial<Commands.NpmBumpPackageVersionCommandConfig>) {
-    super(Object.assign({}, CMD_CONFIG, config));
+    super({ ...CMD_CONFIG, ...config });
   }
 
   getPackageJson = vitest.fn(async () => {
     return PACKAGE_JSON
-  })
-}
+  });
 
-vitest.mock("execa", () => {
-  return {
-    default: async (...args) => {
-      return execa(...args);
-    }
-  };
-});
+  public createChildProcess = vitest.fn(async (_args: any) => {
+    return {
+      stdout: "",
+      stderr: "",
+      childProcess: Stubs.childProcess(),
+    };
+  });
+}
 
 describe("bumping package.json version", () => {
   const PACKAGE_JSON_PATH = `${CMD_CONFIG.workingDirectory}/package.json`;
-
-  beforeEach(() => {
-    execa.mockReset().mockImplementation(async () => {
-      return {
-        exitCode: 0,
-        stdout: "",
-        stderr: "",
-      };
-    });
-  });
 
   test("execution fails when package name is missing", async () => {
     const commandStub = new NpmBumpPackageVersionCommandStub();
@@ -69,8 +54,10 @@ describe("bumping package.json version", () => {
   });
 
   test("npm version command is called using 'version'", async () => {
+    const logger = new Stubs.LoggerStub();
     const expectedVersion = `0.${Date.now()}.1`;
     const commandStub = new NpmBumpPackageVersionCommandStub({
+      logger,
       version: expectedVersion,
     });
 
@@ -87,10 +74,11 @@ describe("bumping package.json version", () => {
 
     await commandStub.do();
 
-    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
+    expect(logger.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
 
-    expect(execa).toBeCalledWith("npm", ["version", expectedVersion, "--no-git-tag-version"], {
+    expect(commandStub.createChildProcess).toBeCalledWith(`npm version ${expectedVersion} --no-git-tag-version`, {
       cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
     });
   });
 
@@ -105,15 +93,15 @@ describe("bumping package.json version", () => {
       };
     });
 
-    const [error] = await to(commandStub.do());
-
-    expect(error).toEqual(new Error(expectedError));
+    await expect(commandStub.do()).rejects.toEqual(new Error(expectedError));
   });
 
   test("npm version command is called using 'preReleaseId'", async () => {
+    const logger = new Stubs.LoggerStub();
     const expectedPreReleaseId = "beta";
     const expectedVersion = `0.${Date.now()}.0-${expectedPreReleaseId}.0`;
     const commandStub = new NpmBumpPackageVersionCommandStub({
+      logger,
       preReleaseId: expectedPreReleaseId,
     });
     const expectedArgs = ["version", "prerelease", `--preid=${expectedPreReleaseId}`, "--no-git-tag-version"];
@@ -127,15 +115,18 @@ describe("bumping package.json version", () => {
 
     await commandStub.do();
 
-    expect(execa).toBeCalledWith("npm", expectedArgs, {
+    expect(commandStub.createChildProcess).toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
     });
 
-    expect(LOGGER.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
+    expect(logger.info).toBeCalledWith(`Changed package '${PACKAGE_JSON.name}' version to '${expectedVersion}'`);
   });
 
   test("undo reverts to initial version when version was bumped", async () => {
+    const logger = new Stubs.LoggerStub();
     const commandStub = new NpmBumpPackageVersionCommandStub({
+      logger,
       version: `0.${Date.now()}.0`,
     });
     const expectedArgs = ["version", PACKAGE_JSON.version, "--no-git-tag-version"];
@@ -144,11 +135,12 @@ describe("bumping package.json version", () => {
 
     await commandStub.undo();
 
-    expect(execa).toBeCalledWith("npm", expectedArgs, {
+    expect(commandStub.createChildProcess).toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
     });
 
-    expect(LOGGER.info).toBeCalledWith(`Reverted '${PACKAGE_JSON.name}' version back to '${PACKAGE_JSON.version}'`);
+    expect(logger.info).toBeCalledWith(`Reverted '${PACKAGE_JSON.name}' version back to '${PACKAGE_JSON.version}'`);
   });
 
   test("undo does not revert to initial version when version was not bumped", async () => {
@@ -165,8 +157,9 @@ describe("bumping package.json version", () => {
 
     await commandStub.undo();
 
-    expect(execa).not.toBeCalledWith("npm", expectedArgs, {
+    expect(commandStub.createChildProcess).not.toBeCalledWith(`npm ${expectedArgs.join(" ")}`, {
       cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
     });
   });
 });

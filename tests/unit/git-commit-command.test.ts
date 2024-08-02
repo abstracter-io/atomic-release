@@ -1,101 +1,79 @@
-import { vitest, describe, test, expect, beforeEach } from "vitest";
+import { ChildProcess } from "node:child_process";
+import { vitest, describe, test, expect } from "vitest";
 
 import { Stubs } from "../stubs";
 import { GitCommitCommand, GitCommitCommandConfig } from "../../src/commands";
 
 const LOGGER = new Stubs.LoggerStub();
 
-const execute = vitest.fn();
+const CMD_CONFIG: GitCommitCommandConfig = {
+  logger: LOGGER,
+  workingDirectory: "/bla/bla",
+  commitMessage: "There is no spoon",
+  filePaths: new Set(["CHANGELOG.md", "package.json"]),
+};
 
 class GitCommitCommandStub extends GitCommitCommand {
-  public static readonly DEFAULT_OPTIONS: GitCommitCommandConfig = {
-    logger: LOGGER,
-    workingDirectory: "/bla/bla",
-    commitMessage: "There is no spoon",
-    filePaths: new Set(["CHANGELOG.md", "package.json"]),
-  };
-
   constructor(config?: Partial<GitCommitCommandConfig>) {
-    super(Object.assign({}, GitCommitCommandStub.DEFAULT_OPTIONS, config));
+    super({
+      ...CMD_CONFIG,
+      ...config,
+    });
   }
+
+  public createChildProcess = vitest.fn((__args: any) => {
+    const childProcess = new ChildProcess();
+
+    return Promise.resolve({
+      stdout: "",
+      stderr: "",
+      childProcess: childProcess,
+    });
+  })
 }
 
-vitest.mock("execa", () => {
-  return {
-    default: async (...args) => {
-      return execute(...args);
-    }
-  };
-});
-
 describe("perform a git commit", () => {
-  const expected = GitCommitCommandStub.DEFAULT_OPTIONS;
-
-  beforeEach(() => {
-    execute.mockImplementation(() => {
-      return {
-        stdout: "",
-      };
-    });
-  });
-
   test("invalid actor throws", async () => {
     const expectedError = new Error("actor must follow \"name <email>\" format");
     const commandStub = new GitCommitCommandStub({
       actor: "...",
     });
-    const error = await commandStub.do().catch((e) => {
-      return e;
-    });
 
-    expect(error).toStrictEqual(expectedError);
+    await expect(commandStub.do()).rejects.toStrictEqual(expectedError);
   });
 
   test("undo removes last commit", async () => {
-    const expectedWorkingDir = "/home/hope/this/does/not/exists";
-    const initialBranchName = "main";
-    const commandStub = new GitCommitCommandStub({
-      workingDirectory: expectedWorkingDir,
-    });
-
-    execute.mockImplementation((_, args) => {
-      if (args.join(" ") === "rev-parse --abbrev-ref HEAD") {
-        return {
-          stdout: initialBranchName,
-        };
-      }
-
-      return {
-        stdout: "",
-      };
-    });
+    const commandStub = new GitCommitCommandStub();
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(execute).toBeCalledWith("git", ["reset", "HEAD~"], { cwd: expectedWorkingDir });
+    expect(commandStub.createChildProcess).toBeCalledWith("git reset HEAD~", {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
+    });
   });
 
   test("files are staged & committed", async () => {
-    const expectedFilePaths = ["CHANGELOG.md", "package.json"];
-    const expectedCommitMessage = "There is no spoon";
-    const expectedWorkingDir = "/home/hope/this/does/not/exists";
-    const commandStub = new GitCommitCommandStub({
-      logger: LOGGER,
-      workingDirectory: expectedWorkingDir,
-      filePaths: new Set(expectedFilePaths),
-      commitMessage: expectedCommitMessage,
-    });
+    const filePaths = Array.from(CMD_CONFIG.filePaths);
+    const commandStub = new GitCommitCommandStub();
 
     await commandStub.do();
 
-    expect(LOGGER.info).toBeCalledWith(`Committed files ${expectedFilePaths.join(", ")}`);
+    for (const filePath of filePaths) {
+      expect(LOGGER.info).toBeCalledWith(`Committed file ${filePath}`);
+    }
 
-    expect(execute).toBeCalledWith("git", ["add", ...expectedFilePaths], { cwd: expectedWorkingDir });
+    expect(commandStub.createChildProcess).toBeCalledWith(`git add ${filePaths.join(" ")}`, {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
+    });
 
-    expect(execute).toBeCalledWith("git", ["commit", "-m", expectedCommitMessage], {
+    expect(commandStub.createChildProcess).toBeCalledWith(`git commit -m ${CMD_CONFIG.commitMessage}`, {
       env: {},
-      cwd: expectedWorkingDir,
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: 'utf8',
     });
   });
 
@@ -108,14 +86,15 @@ describe("perform a git commit", () => {
 
     await commandStub.do();
 
-    expect(execute).toBeCalledWith("git", ["commit", "-m", expected.commitMessage], {
+    expect(commandStub.createChildProcess).toBeCalledWith(`git commit -m ${CMD_CONFIG.commitMessage}`, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
       env: {
         GIT_COMMITTER_NAME: name,
         GIT_COMMITTER_EMAIL: email,
         GIT_AUTHOR_NAME: name,
         GIT_AUTHOR_EMAIL: email,
       },
-      cwd: expected.workingDirectory,
     });
   });
 });

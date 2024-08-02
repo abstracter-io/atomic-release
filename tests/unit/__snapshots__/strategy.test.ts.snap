@@ -16,7 +16,7 @@ StrategyStub {
       "getMentionedIssues": [MockFunction spy],
       "getNextVersion": [MockFunction spy],
       "getPreviousVersion": [MockFunction spy],
-      "getVersions": [MockFunction spy],
+      "listVersions": [MockFunction spy],
     },
     "test": 1,
   },

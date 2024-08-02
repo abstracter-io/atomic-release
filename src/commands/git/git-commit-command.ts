@@ -1,7 +1,7 @@
 import parseAuthor from "parse-author";
-import { ExecaCommand, ExecaCommandConfig } from "../execa-command";
+import { ExecaCommand, ExecCommandConfig } from "../execa-command";
 
-type GitCommitCommandConfig = ExecaCommandConfig & {
+type GitCommitCommandConfig = ExecCommandConfig & {
   actor?: string;
 
   commitMessage: string;
@@ -23,7 +23,7 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandConfig> {
   private filesCommitted: boolean;
 
   private async stageAndCommit(): Promise<void> {
-    await this.execa("git", ["add", ...Array.from(this.config.filePaths)]);
+    await this.exec(`git add ${Array.from(this.config.filePaths).join(' ')}`)
 
     const commitEnvVars = {};
 
@@ -42,14 +42,14 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandConfig> {
       });
     }
 
-    await this.execa("git", ["commit", "-m", this.config.commitMessage], {
+    await this.exec(`git commit -m ${this.config.commitMessage}`, {
       env: commitEnvVars,
     });
   }
 
   public async undo(): Promise<void> {
     if (this.filesCommitted) {
-      await this.execa("git", ["reset", "HEAD~"]);
+      await this.exec("git reset HEAD~");
     }
   }
 
@@ -58,7 +58,9 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandConfig> {
 
     this.filesCommitted = true;
 
-    this.logger.info(`Committed files ${Array.from(this.config.filePaths).join(", ")}`);
+    this.config.filePaths.forEach((filePath) => {
+      this.logger.info(`Committed file ${filePath}`);
+    });
   }
 }
 

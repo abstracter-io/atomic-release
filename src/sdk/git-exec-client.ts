@@ -1,31 +1,30 @@
-import execa from "execa";
 import semver from "semver";
+
+import { exec, ExecOptions } from "../utils/exec";
 
 import type { GitClient, MergedTag, Commit } from "./git-client";
 
-type GitExecaClientConfig = {
-  execa?: typeof execa;
+type GitExecClientConfig = {
   remote: string;
   workingDirectory: string;
 };
 
-class GitExecaClient implements GitClient {
-  private readonly config: GitExecaClientConfig;
+class GitExecClient implements GitClient {
+  private readonly config: GitExecClientConfig;
 
-  public constructor(config: Partial<GitExecaClientConfig> = {}) {
+  public constructor(config: Partial<GitExecClientConfig> = {}) {
     this.config = {
       remote: config.remote ?? "origin",
       workingDirectory: config.workingDirectory ?? process.cwd(),
     };
   }
 
-  private execa(cmd: string, args: string[], config?: execa.Options) {
-    return execa(cmd, args, config);
-  }
+  protected exec = exec
 
-  private cli(args: string[], config?: execa.Options) {
-    return this.execa("git", args, {
+  protected cli(args: string, config?: ExecOptions) {
+    return this.exec(`git ${args}`, {
       cwd: this.config.workingDirectory,
+      encoding: 'utf8',
       ...config,
     });
   }
@@ -33,9 +32,9 @@ class GitExecaClient implements GitClient {
   async log(range: string, format: string): Promise<string[]> {
     const logs: string[] = [];
     const delimiter = ":++:";
-    const subprocess = await this.cli(["log", ...range.split(" "), `--pretty=format:${format}${delimiter}`]);
+    const result = await this.cli(`log ${range} --pretty=format:${format}${delimiter}`);
 
-    for (const log of subprocess.stdout.split(delimiter)) {
+    for (const log of result.stdout.split(delimiter)) {
       if (log.length) {
         logs.push(log.startsWith("\n") ? log.substring(1) : log);
       }
@@ -45,19 +44,19 @@ class GitExecaClient implements GitClient {
   }
 
   async cliVersion(): Promise<string> {
-    const { stdout } = await this.cli(["--version"]);
+    const { stdout } = await this.cli("--version");
 
     return stdout.split(" ")[2];
   }
 
   async refHash(ref: string): Promise<string> {
-    const { stdout } = await this.cli(["rev-parse", ref]);
+    const { stdout } = await this.cli(`rev-parse ${ref}`);
 
     return stdout;
   }
 
   async refName(ref: string): Promise<string> {
-    const { stdout } = await this.cli(["rev-parse", "--abbrev-ref", ref]);
+    const { stdout } = await this.cli(`rev-parse --abbrev-ref ${ref}`);
 
     return stdout;
   }
@@ -132,11 +131,7 @@ class GitExecaClient implements GitClient {
     if (semver.satisfies(version, `>= ${minCliVersion}`)) {
       const tags: MergedTag[] = [];
       const delimiter = ":++:";
-      const { stdout } = await this.cli([
-        "tag",
-        `--merged=${ref}`,
-        `--format=%(refname:strip=2)${delimiter}%(objectname)`,
-      ]);
+      const { stdout } = await this.cli(`tag --merged=${ref} --format=%(refname:strip=2)${delimiter}%(objectname)`);
 
       for (const tag of stdout.split("\n")) {
         if (tag.length) {
@@ -156,7 +151,7 @@ class GitExecaClient implements GitClient {
   }
 
   async remoteTagHash(tagName: string): Promise<string | null> {
-    const { stdout } = await this.cli(["ls-remote", this.config.remote, "-t", `refs/tags/${tagName}`]);
+    const { stdout } = await this.cli(`ls-remote ${this.config.remote} -t refs/tags/${tagName}`);
 
     if (stdout.length) {
       return stdout.split("\t")[0];
@@ -167,7 +162,7 @@ class GitExecaClient implements GitClient {
 
   async remoteBranchHash(branchName?: string): Promise<string | null> {
     const branch = branchName ?? (await this.refName("HEAD"));
-    const { stdout } = await this.cli(["ls-remote", this.config.remote, "-h", `refs/heads/${branch}`]);
+    const { stdout } = await this.cli(`ls-remote ${this.config.remote} -h refs/heads/${branch}`);
 
     if (stdout.length) {
       return stdout.split("\t")[0];
@@ -177,4 +172,4 @@ class GitExecaClient implements GitClient {
   }
 }
 
-export { GitExecaClient, GitExecaClientConfig, MergedTag };
+export { GitExecClient, GitExecClientConfig, MergedTag };

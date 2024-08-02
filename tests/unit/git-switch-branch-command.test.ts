@@ -1,86 +1,83 @@
-import { vitest, describe, test, expect, beforeEach } from "vitest";
+import { vitest, describe, test, expect } from "vitest";
 
 import { Stubs } from "../stubs";
 import { Commands } from "../../src";
 
-const execute = vitest.fn();
-
-const LOGGER = new Stubs.LoggerStub();
-
-vitest.mock("execa", () => {
-  return {
-    default: async (...args) => {
-      return execute(...args);
-    }
-  };
-});
+const CMD_CONFIG: Commands.GitSwitchCommandOptions = {
+  logger: Stubs.NoopLogger.INSTANCE,
+  workingDirectory: "/bla/bla",
+  branchName: "v1.1.1",
+};
 
 class GitSwitchBranchCommandStub extends Commands.GitSwitchBranchCommand {
-  public static readonly CMD_CONFIG: Commands.GitSwitchCommandOptions = {
-    logger: LOGGER,
-    workingDirectory: "/bla/bla",
-    branchName: "v1.1.1",
-  };
-
   constructor(config?: Partial<Commands.GitSwitchCommandOptions>) {
-    super(Object.assign({}, GitSwitchBranchCommandStub.CMD_CONFIG, config));
+    super({ ...CMD_CONFIG, ...config });
   }
+
+  public createChildProcess = vitest.fn(async (__args: any) => {
+    return {
+      stdout: "",
+      stderr: "",
+      childProcess: Stubs.childProcess(),
+    };
+  })
 }
 
 describe("switch git branch", () => {
-  const expected = GitSwitchBranchCommandStub.CMD_CONFIG;
-
-  beforeEach(() => {
-    execute.mockImplementation(() => {
-      return {
-        stdout: "",
-      };
-    });
-  });
-
   test("branch is switched", async () => {
-    const commandStub = new GitSwitchBranchCommandStub();
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitSwitchBranchCommandStub({ logger });
 
-    execute.mockImplementation((_, args) => {
-      if (args.join(" ") === "rev-parse --abbrev-ref HEAD") {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === "git switch rev-parse --abbrev-ref HEAD") {
         return {
+          stderr: "",
           stdout: Date.now().toString(),
+          childProcess: Stubs.childProcess(),
         };
       }
 
       return {
+        stderr: "",
         stdout: "",
+        childProcess: Stubs.childProcess(),
       };
     });
 
     await commandStub.do();
 
-    expect(LOGGER.info).toBeCalledWith(`Switched to branch '${expected.branchName}'`);
+    expect(logger.info).toBeCalledWith(`Switched to branch '${CMD_CONFIG.branchName}'`);
 
-    expect(execute).toBeCalledWith("git", ["switch", expected.branchName], {
-      cwd: expected.workingDirectory,
+    expect(commandStub.createChildProcess).toBeCalledWith(`git switch ${CMD_CONFIG.branchName}`, {
+      encoding: 'utf8',
+      cwd: CMD_CONFIG.workingDirectory,
     });
   });
 
   test("branch is not switched", async () => {
     const commandStub = new GitSwitchBranchCommandStub();
 
-    execute.mockImplementation((_, args) => {
-      if (args.join(" ") === "rev-parse --abbrev-ref HEAD") {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === "git rev-parse --abbrev-ref HEAD") {
         return {
-          stdout: expected.branchName,
+          stderr: '',
+          stdout: CMD_CONFIG.branchName,
+          childProcess: Stubs.childProcess(),
         };
       }
 
       return {
+        stderr: "",
         stdout: "",
+        childProcess: Stubs.childProcess(),
       };
     });
 
     await commandStub.do();
 
-    expect(execute).not.toBeCalledWith("git", ["switch", "-c", expected.branchName], {
-      cwd: expected.workingDirectory,
+    expect(commandStub.createChildProcess).not.toBeCalledWith(`git switch -c ${CMD_CONFIG.branchName}`, {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: "utf8",
     });
   });
 
@@ -97,82 +94,94 @@ describe("switch git branch", () => {
   });
 
   test("undo deletes created branch", async () => {
-    const commandStub = new GitSwitchBranchCommandStub();
+    const logger = new Stubs.LoggerStub();
+    const commandStub = new GitSwitchBranchCommandStub({ logger });
 
-    execute.mockImplementation((_, args) => {
-      const command = args.join(" ");
-
-      if (command === `rev-parse --verify refs/heads/${expected.branchName}`) {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === `git rev-parse --verify refs/heads/${CMD_CONFIG.branchName}`) {
         throw new Error();
       }
 
       return {
         stdout: "",
+        stderr: "",
+        childProcess: Stubs.childProcess(),
       };
     });
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(LOGGER.info).toBeCalledWith(`Deleted branch '${expected.branchName}'`);
+    expect(logger.info).toBeCalledWith(`Deleted branch '${CMD_CONFIG.branchName}'`);
 
-    expect(execute).toBeCalledWith("git", ["branch", "-D", expected.branchName], {
-      cwd: expected.workingDirectory,
+    expect(commandStub.createChildProcess).toBeCalledWith(`git branch -D ${CMD_CONFIG.branchName}`, {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: "utf8",
     });
   });
 
   test("undo switches to initial branch", async () => {
+    const logger = new Stubs.LoggerStub();
     const initialBranchName = Date.now().toString();
-    const commandStub = new GitSwitchBranchCommandStub();
+    const commandStub = new GitSwitchBranchCommandStub({ logger });
 
-    execute.mockImplementation((_, args) => {
-      const command = args.join(" ");
-
-      if (command === "rev-parse --abbrev-ref HEAD") {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === "git rev-parse --abbrev-ref HEAD") {
         return {
+          stderr: "",
           stdout: initialBranchName,
+          childProcess: Stubs.childProcess(),
         };
       }
 
       return {
         stdout: "",
+        stderr: "",
+        childProcess: Stubs.childProcess(),
       };
     });
 
     await commandStub.do();
+
     await commandStub.undo();
 
-    expect(LOGGER.info).toBeCalledWith(`Switched to branch '${initialBranchName}'`);
-    expect(execute).toBeCalledWith("git", ["switch", initialBranchName], {
-      cwd: expected.workingDirectory,
+    expect(logger.info).toBeCalledWith(`Switched to branch '${initialBranchName}'`);
+
+    expect(commandStub.createChildProcess).toBeCalledWith(`git switch ${initialBranchName}`, {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: "utf8",
     });
   });
 
   test("branch is created and switched when branch does not exists", async () => {
     const commandStub = new GitSwitchBranchCommandStub();
 
-    execute.mockImplementation((_, args) => {
-      const command = args.join(" ");
-
-      if (command === `rev-parse --verify refs/heads/${expected.branchName}`) {
+    commandStub.createChildProcess.mockImplementation(async (cmd) => {
+      if (cmd === `git rev-parse --verify refs/heads/${CMD_CONFIG.branchName}`) {
         throw new Error();
       }
 
-      if (command === "rev-parse --abbrev-ref HEAD") {
+      if (cmd === "git rev-parse --abbrev-ref HEAD") {
         return {
+          stderr: "",
           stdout: Date.now().toString(),
+          childProcess: Stubs.childProcess(),
         };
       }
 
       return {
+        stderr: "",
         stdout: "",
+        childProcess: Stubs.childProcess(),
       };
     });
 
     await commandStub.do();
 
-    expect(execute).toBeCalledWith("git", ["switch", "-c", expected.branchName], {
-      cwd: expected.workingDirectory,
+    expect(commandStub.createChildProcess).toBeCalledWith(`git switch -c ${CMD_CONFIG.branchName}`, {
+      cwd: CMD_CONFIG.workingDirectory,
+      encoding: "utf8",
     });
   });
 });
