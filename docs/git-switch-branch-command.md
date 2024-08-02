@@ -17,7 +17,7 @@ Default: `undefined`
 
 The branch name to switch to.
 
-> :information_source: &nbsp; [ExecaCommand](execa-command.md) options are also applicable.
+> :information_source: &nbsp; [ExecCommand](./exec-command.md) options are also applicable.
 
 ### Example
 

@@ -1,6 +1,6 @@
 # ExecaCommand
 
-An abstract class with a method to execute a subprocess using [execa](https://github.com/sindresorhus/execa).
+An abstract class with a method to create a child process using node `child_process` module.
 
 ### Config
 

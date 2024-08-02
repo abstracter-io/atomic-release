@@ -4,7 +4,7 @@ An abstract class with a method to read a package.json.
 
 ### Config
 
-This class accepts the same options as [ExecaCommand](execa-command.md)
+This class accepts the same options as [ExecCommand](./exec-command.md)
 
 ### Example
 

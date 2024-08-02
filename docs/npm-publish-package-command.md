@@ -40,7 +40,7 @@ Default: false
 
 Use `true` only when the registry allows publishing the same version again.
 
-> :information_source: &nbsp; [ExecaCommand](execa-command.md) options are also applicable.
+> :information_source: &nbsp; [ExecCommand](./exec-command.md) options are also applicable.
 
 ### Example
 
