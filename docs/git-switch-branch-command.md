@@ -13,7 +13,6 @@ Type: `object literal`
 ##### branchName
 
 Type: `string`  
-Default: `undefined`
 
 The branch name to switch to.
 
