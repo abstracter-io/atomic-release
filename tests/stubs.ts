@@ -1,7 +1,7 @@
 import { vitest } from "vitest";
-
-import { SDK } from "../src/index";
 import { ChildProcess } from "node:child_process";
+
+import { SDK } from "../src/index.js";
 
 type StrategyStubConfig = SDK.StrategyConfig & {
   test: number;

@@ -1,7 +1,7 @@
 import { vitest, describe, test, expect, beforeEach } from 'vitest'
 
-import { SDK } from "../../src/index";
-import { Stubs } from "../stubs";
+import { SDK } from "../../src/index.js";
+import { Stubs } from "../stubs.js";
 
 const HEAD_HASH = "c658ea3e060490dced90dfb34c018d88b8e797f9";
 const LOGGER = new Stubs.LoggerStub();
@@ -37,6 +37,14 @@ const releaseOptions = () => {
     },
   };
 };
+
+// const fixedDate = async <T>(date: Date, cb: (now: Date) => T) => {
+//   vitest.useFakeTimers({ now: date });
+//
+//   return Promise.resolve(cb(date)).finally(() => {
+//     vitest.useRealTimers();
+//   });
+// };
 
 describe("git trunk release", () => {
   let release: SDK.Release;
@@ -113,7 +121,6 @@ describe("git trunk release", () => {
 
       rawConventionalCommits,
     });
-
     const changelog = await release.getChangelog();
 
     expect(changelog).toMatchSnapshot();
@@ -172,6 +179,7 @@ describe("git trunk release", () => {
     const changelog = await release.getChangelogByVersion(hash.slice(0, 7));
 
     expect(changelog).not.toBeNull();
+
     expect(changelog).toMatchSnapshot();
   });
 
