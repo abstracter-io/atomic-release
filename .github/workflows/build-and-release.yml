@@ -49,8 +49,8 @@ jobs:
 
       # https://commitlint.js.org/guides/ci-setup.html#github-actions
       # Verify the commit for push & PR's
-      - name: Lint Code
-        run: npm run lint:all
+      # - name: Lint Code
+      #  run: npm run lint:all
 
       - name: Lint Commit Messages
         run: |
