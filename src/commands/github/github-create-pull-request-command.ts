@@ -1,8 +1,8 @@
-import { GithubHttpCommand, GithubHttpCommandOptions, MimeTypes } from "./github-http-command";
+import { MimeTypes, GithubHttpCommand, GithubHttpCommandConfig } from './github-http-command.js';
 
 type PullRequestRestResource = Record<string, unknown>;
 
-type GithubCreatePullRequestCommandOptions = GithubHttpCommandOptions & {
+type GithubCreatePullRequestCommandConfig = GithubHttpCommandConfig & {
   // some-branch
   head: string;
 
@@ -47,28 +47,23 @@ type GithubCreatePullRequestCommandOptions = GithubHttpCommandOptions & {
     },
  });
  */
-class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullRequestCommandOptions> {
+class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullRequestCommandConfig> {
   private createdPullRequest: PullRequestRestResource;
 
-  public constructor(options: GithubCreatePullRequestCommandOptions) {
-    super(options);
-  }
-
   private async createPullRequest(): Promise<PullRequestRestResource> {
-    const { owner, repo, head, base, title, body } = this.options;
-    const url = `https://api.github.com/repos/${owner}/${repo}/pulls`;
+    const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/pulls`;
     const response = await this.fetch(url, {
-      method: "POST",
+      method: 'POST',
 
       headers: {
         Accept: MimeTypes.V3,
       },
 
       body: JSON.stringify({
-        head,
-        base,
-        title,
-        body,
+        head: this.config.head,
+        base: this.config.base,
+        body: this.config.body,
+        title: this.config.title,
       }),
     });
 
@@ -82,19 +77,18 @@ class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullR
   public async undo(): Promise<void> {
     if (this.createdPullRequest) {
       // Can't delete a pull-request, the next best thing is to close it
-      const { owner, repo } = this.options;
       const createdPullRequest = this.createdPullRequest;
       const pullRequestURL = createdPullRequest.html_url;
-      const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${createdPullRequest.number}`;
+      const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/pulls/${createdPullRequest.number}`;
       const response = await this.fetch(url, {
-        method: "PATCH",
+        method: 'PATCH',
 
         headers: {
           Accept: MimeTypes.V3,
         },
 
         body: JSON.stringify({
-          state: "closed",
+          state: 'closed',
         }),
       });
 
@@ -117,4 +111,4 @@ class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullR
   }
 }
 
-export { GithubCreatePullRequestCommand, GithubCreatePullRequestCommandOptions };
+export { GithubCreatePullRequestCommand, GithubCreatePullRequestCommandConfig };

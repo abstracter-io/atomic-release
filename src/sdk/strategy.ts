@@ -1,34 +1,36 @@
-import to from "await-to-js";
+import { to } from 'await-to-js';
 
-import { Command } from "./command";
-import { timer } from "../utils/timer";
-import { Logger } from "../ports/logger";
-import { Release } from "../ports/release";
-import { processStdoutLogger } from "../adapters/process-stdout-logger";
+import { Logger } from './logger.js';
+import { Release } from './release.js';
+import { Command } from './command.js';
 
-type StrategyOptions = {
-  logger?: Logger;
+import { timer } from '../utils/timer.js';
+
+type StrategyConfig = {
+  logger: Logger;
   release: Release;
 };
 
-abstract class Strategy<T extends StrategyOptions> {
-  protected readonly logger: Logger;
-  protected readonly options: Omit<T, "logger">;
+type CommandProvider<T> = (config: T) => Promise<Command | null>;
 
-  protected constructor(options: T) {
-    this.options = options ?? ({} as T);
+type CommandsCollection = Command[];
 
-    this.logger = options.logger ?? processStdoutLogger({ name: this.getName() });
+class Strategy<T extends StrategyConfig = StrategyConfig> {
+  protected readonly config: T;
+  protected readonly commandProviders: CommandProvider<T>[];
+
+  public constructor(config: T) {
+    this.config = config;
+    this.commandProviders = [];
   }
 
-  private async executeCommands(atomicCommands: Command[]): Promise<void> {
-    const logger = this.logger;
-    const commandsCount = atomicCommands.length;
+  private async executeCommands(commands: CommandsCollection): Promise<void> {
+    const logger = this.config.logger;
 
-    for (let i = 0, l = commandsCount; i < l; i += 1) {
-      const command = atomicCommands[i];
-      const executeTimer = timer();
+    for (let i = 0, l = commands.length; i < l; i += 1) {
+      const command = commands[i];
       const commandName = command.getName();
+      const executeTimer = timer();
 
       logger.debug(`Executing command '${commandName}'`);
 
@@ -38,19 +40,20 @@ abstract class Strategy<T extends StrategyOptions> {
       logger.debug(`Executing command '${commandName}' completed in ~${executeTimer}`);
 
       if (error) {
-        logger.warn(`An error occurred while executing command '${commandName}'`);
-
-        logger.error(error);
+        logger.error(`Command '${commandName}.do' execution failed`);
 
         while (i !== -1) {
-          const command = atomicCommands[i];
-          // eslint-disable-next-line no-await-in-loop
-          const [undoError] = await to(command.undo());
+          const command = commands[i];
 
-          if (undoError) {
-            logger.warn(`An error occurred while undoing command '${command.getName()}'`);
+          if (command) {
+            // eslint-disable-next-line no-await-in-loop
+            const [error] = await to(command.undo());
 
-            logger.error(undoError);
+            if (error) {
+              logger.error(`An error occurred while undoing command '${command.getName()}'`);
+
+              logger.error(error);
+            }
           }
 
           i -= 1;
@@ -61,61 +64,87 @@ abstract class Strategy<T extends StrategyOptions> {
     }
   }
 
-  protected abstract shouldRun(): Promise<boolean>;
+  protected async shouldRun(): Promise<boolean> {
+    const [nextVersion, prevVersion] = await Promise.all([
+      this.config.release.getNextVersion(),
+      this.config.release.getPreviousVersion(),
+    ]);
 
-  protected abstract getCommands(): Promise<Command[]>;
+    this.config.logger.info(`Next version is ${nextVersion}`);
 
-  protected getName(): string {
-    return this.constructor.name;
+    this.config.logger.info(`Previous version is ${prevVersion}`);
+
+    if (nextVersion === prevVersion) {
+      this.config.logger.info('No version change detected');
+
+      return false;
+    }
+
+    return true;
+  }
+
+  protected async getCommands(): Promise<Command[]> {
+    const commands: (Command | null)[] = [];
+
+    await Promise.all(this.commandProviders.map(async (p, i) => {
+      commands[i] = await p(this.config);
+    }));
+
+    return commands.filter(Boolean) as Command[];
+  }
+
+  public addCommandProvider(provider: CommandProvider<T>) {
+    this.commandProviders.push(provider);
+
+    return this;
   }
 
   public async run(): Promise<void> {
+    const logger = this.config.logger;
+
     try {
       const shouldRun = await this.shouldRun();
 
       if (shouldRun) {
         const commands = await this.getCommands();
-        const nextVersion = await this.options.release.getNextVersion();
-        const prevVersion = await this.options.release.getPreviousVersion();
 
-        this.logger.info(`Next version is ${nextVersion}`);
-        this.logger.info(`Previous version is ${prevVersion}`);
-
-        this.logger.debug(`Executing ${commands.length} commands`);
+        logger.info(`Executing ${commands.length} command(s)`);
 
         if (commands.length) {
           const executionTimer = timer();
 
-          this.logger.info("Executing commands...");
-
           await this.executeCommands(commands);
 
-          this.logger.info("Cleaning up...");
+          logger.info('Cleaning up...');
 
-          await Promise.all(commands.map((command) => {
-            return command.cleanup().catch(e => {
-              this.logger.warn(e);
-            });
+          await Promise.all(commands.map(async (command) => {
+            try {
+              if (command) {
+                await command.cleanup();
+              }
+            }
+            catch (e) {
+              logger.warn(e);
+            }
           }));
 
-          this.logger.info(`Execution completed in ~${executionTimer}`);
+          logger.info(`Execution completed in ~${executionTimer}`);
         }
-        //
         else {
-          this.logger.warn(`Strategy ${this.getName()} has no commands`);
+          logger.warn('Strategy has no commands');
         }
       }
 
-      this.logger.info("All done...");
+      logger.info('All done');
     }
     catch (e) {
       process.exitCode = 1;
 
-      this.logger.error("Release failed");
+      logger.error('Strategy execution failed');
 
       throw e;
     }
   }
 }
 
-export { StrategyOptions, Strategy };
+export { Strategy, StrategyConfig };

@@ -1,24 +1,25 @@
-import uriTemplates from "uri-templates";
+import uriTemplates from 'uri-templates';
+import type { RequestInit, RequestInfo, Response } from 'undici-types';
 
-import { HttpCommand, HttpCommandOptions } from "../http-command";
+import { HttpCommand, HttpCommandConfig } from '../http-command.js';
 
 const enum MimeTypes {
-  V3 = "application/vnd.github.v3+json",
+  V3 = 'application/vnd.github.v3+json',
 }
 
 const DEFAULT_HEADERS = {
-  Accept: "application/vnd.github.v3+json",
+  Accept: 'application/vnd.github.v3+json',
 };
 
-type GithubHttpCommandOptions = HttpCommandOptions;
+type GithubHttpCommandConfig = HttpCommandConfig;
 
-abstract class GithubHttpCommand<T extends GithubHttpCommandOptions> extends HttpCommand<T> {
-  protected constructor(options: T) {
+abstract class GithubHttpCommand<T extends GithubHttpCommandConfig> extends HttpCommand<T> {
+  public constructor(config: T) {
     super({
-      ...options,
+      ...config,
       headers: {
         ...DEFAULT_HEADERS,
-        ...options.headers,
+        ...config.headers,
       },
     });
   }
@@ -26,6 +27,20 @@ abstract class GithubHttpCommand<T extends GithubHttpCommandOptions> extends Htt
   protected expendURL(url: string, parameters: Record<string, unknown>): string {
     return uriTemplates(url).fill(parameters);
   }
+
+  protected async fetch(info: RequestInfo, init: RequestInit): Promise<Response> {
+    const response = await super.fetch(info, init);
+
+    if (!response.ok) {
+      const tip = response.headers.get('X-Accepted-GitHub-Permissions');
+
+      if (tip) {
+        this.logger.warn(`GitHub Missing Permissions: ${tip}`);
+      }
+    }
+
+    return response;
+  }
 }
 
-export { MimeTypes, GithubHttpCommand, GithubHttpCommandOptions };
+export { MimeTypes, GithubHttpCommand, GithubHttpCommandConfig };

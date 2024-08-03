@@ -1,14 +1,14 @@
-import fs from "fs";
-import type { PackageJson } from "type-fest";
+import fs from 'fs';
+import type { PackageJson } from 'type-fest';
 
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import { ExecCommand, ExecCommandConfig } from '../exec-command.js';
 
-type NpmCommandOptions = ExecaCommandOptions;
+type NpmCommandConfig = ExecCommandConfig;
 
-abstract class NpmCommand<T extends NpmCommandOptions> extends ExecaCommand<T> {
+abstract class NpmCommand<T extends NpmCommandConfig> extends ExecCommand<T> {
   protected readonly packageJsonFilePath: string;
 
-  protected constructor(options: T) {
+  public constructor(options: T) {
     super(options);
 
     this.packageJsonFilePath = `${options.workingDirectory}/package.json`;
@@ -16,12 +16,12 @@ abstract class NpmCommand<T extends NpmCommandOptions> extends ExecaCommand<T> {
 
   protected async getPackageJson(): Promise<PackageJson> {
     const packageJson = await fs.promises.readFile(this.packageJsonFilePath, {
-      flag: "rs",
-      encoding: "utf-8",
+      flag: 'rs',
+      encoding: 'utf-8',
     });
 
     return JSON.parse(packageJson);
   }
 }
 
-export { NpmCommand, NpmCommandOptions };
+export { NpmCommand, NpmCommandConfig };

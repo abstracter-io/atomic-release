@@ -1,6 +1,6 @@
-import { NpmCommand, NpmCommandOptions } from "./npm-command";
+import { NpmCommand, NpmCommandConfig } from './npm-command.js';
 
-type NpmBumpPackageVersionCommandOptions = NpmCommandOptions & {
+type NpmBumpPackageVersionCommandConfig = NpmCommandConfig & {
   version: string;
   preReleaseId?: string;
 };
@@ -11,67 +11,65 @@ type NpmBumpPackageVersionCommandOptions = NpmCommandOptions & {
     preReleaseId: "beta",
     workingDirectory: "/absolute/path", <-- package.json should be inside
  });
-
- <br>
-
+---
  @example bumping to "1.1.0" (does not matter what the current version is)
  const command = new NpmBumpPackageVersionCommand({
     version: "1.1.0",
     workingDirectory: "/absolute/path", <-- package.json should be inside
  });
  */
-class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionCommandOptions> {
+class NpmBumpPackageVersionCommand extends NpmCommand<NpmBumpPackageVersionCommandConfig> {
   private initialVersion: string;
   private versionChanged: boolean;
 
-  public constructor(options: NpmBumpPackageVersionCommandOptions) {
-    super(options);
+  private async versionCmd(arg: string): Promise<void> {
+    await this.exec(`npm version ${arg} --no-git-tag-version`);
   }
 
   private async bumpVersion(): Promise<string> {
-    const { version, preReleaseId } = this.options;
+    const preReleaseId = this.config.preReleaseId;
 
-    await this.executeVersionCommand(version);
+    await this.versionCmd(this.config.version);
 
     if (preReleaseId) {
-      await this.executeVersionCommand(`prerelease --preid=${preReleaseId}`);
+      await this.versionCmd(`prerelease --preid=${preReleaseId}`);
     }
 
     return (await this.getPackageJson()).version as string;
   }
 
-  private async executeVersionCommand(arg: string): Promise<void> {
-    await this.execa("npm", ["version", ...arg.split(" "), "--no-git-tag-version"], {
-      cwd: this.options.workingDirectory,
-    });
-  }
-
   public async do(): Promise<void> {
     const { version, name } = await this.getPackageJson();
 
-    if (!version || !name) {
-      throw new Error(`Package ${this.packageJsonFilePath} 'version' or 'name' properties are missing`);
+    if (version && name) {
+      this.initialVersion = version;
+
+      if (this.config.version !== version) {
+        const changedVersion = await this.bumpVersion();
+
+        this.logger.info(`Changed package '${name}' version to '${changedVersion}'`);
+
+        this.versionChanged = true;
+
+        return;
+      }
+
+      throw new Error('version should have changed');
     }
 
-    this.initialVersion = version;
-
-    this.logger.info(`Changed package '${name}' version to '${await this.bumpVersion()}'`);
-
-    this.versionChanged = true;
+    throw new Error(`Package ${this.packageJsonFilePath} 'version' or 'name' properties are missing`);
   }
 
   public async undo(): Promise<void> {
     if (this.versionChanged) {
-      const { name, version } = await this.getPackageJson();
+      const { name } = await this.getPackageJson();
       const initialVersion = this.initialVersion;
 
-      if (version !== initialVersion) {
-        await this.executeVersionCommand(initialVersion);
-      }
+      await this.versionCmd(initialVersion);
 
       this.logger.info(`Reverted '${name}' version back to '${initialVersion}'`);
     }
   }
 }
 
-export { NpmBumpPackageVersionCommand, NpmBumpPackageVersionCommandOptions };
+export { NpmBumpPackageVersionCommand, NpmBumpPackageVersionCommandConfig };

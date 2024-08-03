@@ -1,13 +1,13 @@
-import fs from "fs";
+import fs from 'fs';
+import { to } from 'await-to-js';
 
-import { Command, CommandOptions } from "../";
-import to from "await-to-js";
+import { Command, CommandConfig } from '../sdk/command.js';
 
-type FileWriterCommandOptions = CommandOptions & {
+type FileWriterCommandConfig = CommandConfig & {
   content: string;
   create?: boolean;
   absoluteFilePath: string;
-  mode?: "append" | "prepend" | "replace";
+  mode?: 'append' | 'prepend' | 'replace';
 };
 
 /**
@@ -29,60 +29,56 @@ type FileWriterCommandOptions = CommandOptions & {
     absoluteFilePath: "/home/dev/project/existing.txt",
  });
  */
-class FileWriterCommand extends Command<FileWriterCommandOptions> {
+class FileWriterCommand extends Command<FileWriterCommandConfig> {
   private fileWasCreated: boolean;
   private originalFileContent: null | string = null;
 
-  public constructor(options: FileWriterCommandOptions) {
-    super(options);
-  }
-
   protected async readTextFile(): Promise<string> {
-    const absoluteFilePath = this.options.absoluteFilePath;
+    const absoluteFilePath = this.config.absoluteFilePath;
 
     this.logger.debug(`Reading file ${absoluteFilePath}`);
 
     return fs.promises.readFile(absoluteFilePath, {
-      encoding: "utf-8",
-      flag: "r",
+      encoding: 'utf-8',
+      flag: 'r',
     });
   }
 
   protected async filePathExists(): Promise<boolean> {
-    const [error] = await to(fs.promises.access(this.options.absoluteFilePath, fs.constants.F_OK));
+    const [error] = await to(fs.promises.access(this.config.absoluteFilePath, fs.constants.F_OK));
 
     return error === null;
   }
 
   protected async writeFileContent(content: string): Promise<void> {
-    const { absoluteFilePath } = this.options;
+    const { absoluteFilePath } = this.config;
 
     await fs.promises.writeFile(absoluteFilePath, content);
   }
 
   public async do(): Promise<void> {
     const fileExists = await this.filePathExists();
-    const absoluteFilePath = this.options.absoluteFilePath;
+    const absoluteFilePath = this.config.absoluteFilePath;
 
     if (fileExists) {
-      const mode = this.options.mode;
+      const mode = this.config.mode;
 
       this.originalFileContent = await this.readTextFile();
 
-      if (mode === "replace") {
-        await this.writeFileContent(`${this.options.content}`);
+      if (mode === 'replace') {
+        await this.writeFileContent(`${this.config.content}`);
 
         this.logger.info(`Replaced ${absoluteFilePath} content`);
       }
       //
-      else if (mode === "prepend") {
-        await this.writeFileContent(`${this.options.content}${this.originalFileContent}`);
+      else if (mode === 'prepend') {
+        await this.writeFileContent(`${this.config.content}${this.originalFileContent}`);
 
         this.logger.info(`Prepended content to file ${absoluteFilePath}`);
       }
       //
-      else if (!mode || mode === "append") {
-        await this.writeFileContent(`${this.originalFileContent}${this.options.content}`);
+      else if (!mode || mode === 'append') {
+        await this.writeFileContent(`${this.originalFileContent}${this.config.content}`);
 
         this.logger.info(`Appended content to file ${absoluteFilePath}`);
       }
@@ -92,8 +88,8 @@ class FileWriterCommand extends Command<FileWriterCommandOptions> {
       }
     }
     //
-    else if (this.options.create) {
-      await this.writeFileContent(this.options.content);
+    else if (this.config.create) {
+      await this.writeFileContent(this.config.content);
 
       this.logger.info(`Created file ${absoluteFilePath}`);
 
@@ -103,7 +99,7 @@ class FileWriterCommand extends Command<FileWriterCommandOptions> {
 
   public async undo(): Promise<void> {
     if (this.fileWasCreated) {
-      const absoluteFilePath = this.options.absoluteFilePath;
+      const absoluteFilePath = this.config.absoluteFilePath;
 
       await fs.promises.unlink(absoluteFilePath);
 
@@ -113,9 +109,9 @@ class FileWriterCommand extends Command<FileWriterCommandOptions> {
     else if (this.originalFileContent) {
       await this.writeFileContent(this.originalFileContent);
 
-      this.logger.info(`Reverted file ${this.options.absoluteFilePath}`);
+      this.logger.info(`Reverted file ${this.config.absoluteFilePath}`);
     }
   }
 }
 
-export { FileWriterCommand, FileWriterCommandOptions };
+export { FileWriterCommand, FileWriterCommandConfig };

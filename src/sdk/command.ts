@@ -1,18 +1,18 @@
-import { Logger } from "../ports/logger";
-import { processStdoutLogger } from "../adapters/process-stdout-logger";
+import { Logger } from './logger.js';
+import { processStdoutLogger } from './process-stdout-logger.js';
 
-type CommandOptions = {
+type CommandConfig = {
   logger?: Logger;
 };
 
-abstract class Command<T extends CommandOptions = CommandOptions> {
+abstract class Command<T extends CommandConfig = CommandConfig> {
   protected readonly logger: Logger;
-  protected readonly options: Omit<T, keyof CommandOptions>;
+  protected readonly config: Omit<T, keyof CommandConfig>;
 
-  protected constructor(options?: T) {
-    this.options = options ?? ({} as T);
+  public constructor(config?: T) {
+    this.config = config ?? ({} as T);
 
-    this.logger = options?.logger || processStdoutLogger({ name: this.getName() });
+    this.logger = config?.logger ?? processStdoutLogger({ name: this.getName() });
   }
 
   public getName(): string {
@@ -30,4 +30,4 @@ abstract class Command<T extends CommandOptions = CommandOptions> {
   };
 }
 
-export { Command, CommandOptions };
+export { Command, CommandConfig };

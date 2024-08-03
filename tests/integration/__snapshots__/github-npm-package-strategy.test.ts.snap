@@ -1,0 +1,131 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`github npm package strategy > commands state 1`] = `
+[
+  GitTagCommand {
+    "config": {
+      "logger": NoopLogger {
+        "debug": [Function],
+        "error": [Function],
+        "info": [Function],
+        "warn": [Function],
+      },
+      "name": "v0.1.1-beta.0",
+      "remote": "origin-test",
+      "workingDirectory": "/this/is/sparta",
+    },
+    "createChildProcess": [Function],
+    "localTagCreated": false,
+    "logger": NoopLogger {
+      "debug": [Function],
+      "error": [Function],
+      "info": [Function],
+      "warn": [Function],
+    },
+    "remote": "origin-test",
+    "remoteTagCreated": false,
+    "tagRef": "refs/tags/v0.1.1-beta.0",
+  },
+  GithubCreateReleaseCommand {
+    "_fetch": [Function],
+    "config": {
+      "body": "## 0.1.1-beta.0 (2024-08-05)
+
+### Features
+
+* ... ([c658ea3](https://github.com/owner/repo_name/commit/c658ea3e060490dced90dfb34c018d88b8e797f9))
+",
+      "headers": {
+        "Accept": "application/vnd.github.v3+json",
+        "Authorization": "token github-personal-access-token",
+      },
+      "isStable": false,
+      "logger": NoopLogger {
+        "debug": [Function],
+        "error": [Function],
+        "info": [Function],
+        "warn": [Function],
+      },
+      "name": "v0.1.1-beta.0",
+      "owner": "abstracter-io",
+      "repo": "atomic-release",
+      "tagName": "v0.1.1-beta.0",
+    },
+    "createdRelease": undefined,
+    "logger": NoopLogger {
+      "debug": [Function],
+      "error": [Function],
+      "info": [Function],
+      "warn": [Function],
+    },
+  },
+  GithubCreateIssueCommentsCommand {
+    "_fetch": [Function],
+    "config": {
+      "headers": {
+        "Accept": "application/vnd.github.v3+json",
+        "Authorization": "token github-personal-access-token",
+      },
+      "issueComments": [],
+      "logger": NoopLogger {
+        "debug": [Function],
+        "error": [Function],
+        "info": [Function],
+        "warn": [Function],
+      },
+      "repoName": "atomic-release",
+      "repoOwner": "abstracter-io",
+    },
+    "createdCommentsResources": [],
+    "logger": NoopLogger {
+      "debug": [Function],
+      "error": [Function],
+      "info": [Function],
+      "warn": [Function],
+    },
+  },
+  NpmBumpPackageVersionCommand {
+    "config": {
+      "logger": NoopLogger {
+        "debug": [Function],
+        "error": [Function],
+        "info": [Function],
+        "warn": [Function],
+      },
+      "version": "0.1.1-beta.0",
+      "workingDirectory": "/this/is/sparta",
+    },
+    "createChildProcess": [Function],
+    "initialVersion": undefined,
+    "logger": NoopLogger {
+      "debug": [Function],
+      "error": [Function],
+      "info": [Function],
+      "warn": [Function],
+    },
+    "packageJsonFilePath": "/this/is/sparta/package.json",
+    "versionChanged": undefined,
+  },
+  NpmPublishPackageCommand {
+    "config": {
+      "logger": NoopLogger {
+        "debug": [Function],
+        "error": [Function],
+        "info": [Function],
+        "warn": [Function],
+      },
+      "tag": "beta",
+      "workingDirectory": "/this/is/sparta",
+    },
+    "createChildProcess": [Function],
+    "logger": NoopLogger {
+      "debug": [Function],
+      "error": [Function],
+      "info": [Function],
+      "warn": [Function],
+    },
+    "packageJsonFilePath": "/this/is/sparta/package.json",
+    "publishedPackage": undefined,
+  },
+]
+`;

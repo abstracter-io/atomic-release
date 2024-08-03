@@ -1,2 +1,2 @@
-export * from "./sdk/command";
-export * from "./sdk/strategy";
+export * as SDK from './sdk/index.js';
+export * as Commands from './commands/index.js';

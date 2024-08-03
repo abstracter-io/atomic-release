@@ -13,13 +13,13 @@ Atomic Release is an SDK to help automate a software release process with the ab
 - Can be used with any project type (just need a node runtime).
 - A strategy for releasing npm packages: (bumping versions, generating changelogs, and much more)
 
-  ![github-npm-strategy-demo](docs/assets/github-npm-strategy-fail-demo.gif)
+  ![github-npm-strategy-demo](docs/github-npm-strategy-fail-demo.gif)
   
   A failure during a release undoes previous commands
 
 Find out more by reading the [docs](docs)
 
-> 💡 &nbsp; Fun fact: This library is released using GithubNpmPackageStrategy. [See example](scripts/atomic-release.js)
+> 💡 &nbsp; Fun fact: This library is released using githubNpmPackageStrategy. [See example](scripts/atomic-release.js)
 
 ## Install
 
@@ -29,34 +29,30 @@ Find out more by reading the [docs](docs)
 
 ## Documentation
 
-- SDK
-   - [Command](docs/command.md)
-   - [Strategy](docs/strategy.md)
-- Ports
-   - [Release](docs/ports/release.md)
-   - [GitClient](docs/ports/git-client.md)
-   - [Logger](docs/ports/logger.md)
- - Adapters
-   - [gitSemanticRelease](docs/adapters/git-semantic-release.md)
-   - [processStdoutLogger](docs/adapters/process-stdout-logger.md)
-   - [GitExecaClient](docs/adapters/git-execa-client.md)
-- Strategies
-   - [GithubNpmPackageStrategy](docs/strategies/github-npm-package-strategy.md)
-- Commands
-   - [ExecaCommand](docs/commands/execa-command.md)
-   - [HttpCommand](docs/commands/http-command.md)
-   - [FileWriterCommand](docs/commands/file-writer-command.md)
-   - [GitCommitCommand](docs/commands/git-commit-command.md)
-   - [GitSwitchBranchCommand](docs/commands/git-switch-branch-command.md)
-   - [GitPushBranchCommand](docs/commands/git-push-branch-command.md)
-   - [GitTagCommand](docs/commands/git-tag-command.md)
-   - [GithubHttpCommand](docs/commands/github-http-command.md)
-   - [GithubCreateIssueCommentsCommand](docs/commands/github-create-issue-comments-command.md)
-   - [GithubCreatePullRequestCommand](docs/commands/github-create-pull-request-command.md)
-   - [GithubCreateReleaseCommand](docs/commands/github-create-release-command.md)
-   - [NpmCommand](docs/commands/npm-command.md)
-   - [NpmBumpPackageVersionCommand](docs/commands/npm-bump-package-version-command.md)
-   - [NpmPublishPackageCommand](docs/commands/npm-publish-package-command.md)
+- [Logger](docs/logger.md)
+  - [processStdoutLogger](docs/process-stdout-logger.md)
+- [Strategy](docs/strategy.md)
+  - [githubNpmPackageStrategy](docs/github-npm-package-strategy.md)
+- [Release](docs/release.md)
+  - [gitTrunkRelease](docs/git-trunk-release.md)
+  - [gitTagBasedRelease](docs/git-tag-based-release.md)
+- [GitClient](docs/git-client.md)
+  - [GitExecClient](docs/git-exec-client.md)
+- [Command](docs/command.md)
+  - [ExecCommand](docs/exec-command.md)
+  - [HttpCommand](docs/http-command.md)
+  - [FileWriterCommand](docs/file-writer-command.md)
+  - [GitCommitCommand](docs/git-commit-command.md)
+  - [GitSwitchBranchCommand](docs/git-switch-branch-command.md)
+  - [GitPushBranchCommand](docs/git-push-branch-command.md)
+  - [GitTagCommand](docs/git-tag-command.md)
+  - [GithubHttpCommand](docs/github-http-command.md)
+  - [GithubCreateIssueCommentsCommand](docs/github-create-issue-comments-command.md)
+  - [GithubCreatePullRequestCommand](docs/github-create-pull-request-command.md)
+  - [GithubCreateReleaseCommand](docs/github-create-release-command.md)
+  - [NpmCommand](docs/npm-command.md)
+  - [NpmBumpPackageVersionCommand](docs/npm-bump-package-version-command.md)
+  - [NpmPublishPackageCommand](docs/npm-publish-package-command.md)
 
 ## FAQ
  * Where is package-lock.json?  

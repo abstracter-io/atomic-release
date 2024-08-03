@@ -1,7 +1,7 @@
-import parseAuthor from "parse-author";
-import { ExecaCommand, ExecaCommandOptions } from "../execa-command";
+import parseAuthor from 'parse-author';
+import { ExecCommand, ExecCommandConfig } from '../exec-command.js';
 
-type GitCommitCommandOptions = ExecaCommandOptions & {
+type GitCommitCommandConfig = ExecCommandConfig & {
   actor?: string;
 
   commitMessage: string;
@@ -19,23 +19,30 @@ type GitCommitCommandOptions = ExecaCommandOptions & {
     filePaths: new Set(["path/relative/to/working/directory/file.txt"]),
  });
  */
-class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
-  private filesCommitted: boolean;
+class GitCommitCommand extends ExecCommand<GitCommitCommandConfig> {
+  private commited: boolean;
+  private filesStaged: boolean;
 
-  public constructor(options: GitCommitCommandOptions) {
-    super(options);
+  private async stageFiles(): Promise<void> {
+    const { childProcess, stderr, stdout } = await this.exec(`git add ${Array.from(this.config.filePaths).join(' ')}`);
+
+    if (childProcess.exitCode !== 0) {
+      throw new Error(`Staging failed, exit code is ${childProcess.exitCode} ${stderr} ${stdout}`);
+    }
+
+    this.filesStaged = true;
   }
 
-  private async stageAndCommit(): Promise<void> {
-    await this.execa("git", ["add", ...Array.from(this.options.filePaths)]);
+  private async commit(): Promise<void> {
+    const commitEnvVars = {
+      ...process.env,
+    };
 
-    const commitEnvVars = {};
-
-    if (this.options.actor) {
-      const { name, email } = parseAuthor(this.options.actor);
+    if (this.config.actor) {
+      const { name, email } = parseAuthor(this.config.actor);
 
       if (!name || !email) {
-        throw new Error("actor must follow \"name <email>\" format");
+        throw new Error('actor must follow "name <email>" format');
       }
 
       Object.assign(commitEnvVars, {
@@ -46,24 +53,36 @@ class GitCommitCommand extends ExecaCommand<GitCommitCommandOptions> {
       });
     }
 
-    await this.execa("git", ["commit", "-m", this.options.commitMessage], {
+    const result = await this.exec({ command: 'git', args: ['commit', '-m', this.config.commitMessage] }, {
       env: commitEnvVars,
     });
+
+    if (result.childProcess.exitCode !== 0) {
+      throw new Error(`Commit failed, exit code is ${result.childProcess.exitCode}`);
+    }
+
+    this.config.filePaths.forEach((filePath) => {
+      this.logger.info(`Committed file ${filePath}`);
+    });
+
+    this.commited = true;
   }
 
   public async undo(): Promise<void> {
-    if (this.filesCommitted) {
-      await this.execa("git", ["reset", "HEAD~"]);
+    if (this.filesStaged) {
+      await this.exec(`git restore --staged ${Array.from(this.config.filePaths).join(' ')}`);
+    }
+
+    if (this.commited) {
+      await this.exec('git reset HEAD~');
     }
   }
 
   public async do(): Promise<void> {
-    await this.stageAndCommit();
+    await this.stageFiles();
 
-    this.filesCommitted = true;
-
-    this.logger.info(`Committed files ${Array.from(this.options.filePaths).join(", ")}`);
+    await this.commit();
   }
 }
 
-export { GitCommitCommand, GitCommitCommandOptions };
+export { GitCommitCommand, GitCommitCommandConfig };
