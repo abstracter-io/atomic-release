@@ -1,6 +1,6 @@
 {
   "name": "@abstracter/atomic-release",
-  "version": "0.0.0",
+  "version": "1.2.1-beta.2",
   "description": "Automated atomic release using the command pattern.",
   "private": false,
   "main": "index.js",
