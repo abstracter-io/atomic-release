@@ -1,6 +1,4 @@
-import { Response } from "node-fetch";
-
-import { GithubHttpCommand, GithubHttpCommandOptions } from "./github-http-command";
+import { GithubHttpCommand, GithubHttpCommandConfig } from './github-http-command.js';
 
 type CommentRestResource = Record<string, unknown>;
 
@@ -9,11 +7,9 @@ type IssueComment = {
   issueNumber: number;
 };
 
-type GithubCreateIssueCommentsCommandOptions = GithubHttpCommandOptions & {
-  repo: string;
-
-  owner: string;
-
+type GithubCreateIssueCommentsCommandConfig = GithubHttpCommandConfig & {
+  repoName: string;
+  repoOwner: string;
   issueComments: IssueComment[];
 };
 
@@ -35,26 +31,22 @@ type GithubCreateIssueCommentsCommandOptions = GithubHttpCommandOptions & {
     },
   });
  */
-class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIssueCommentsCommandOptions> {
+class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIssueCommentsCommandConfig> {
   private readonly createdCommentsResources: CommentRestResource[] = [];
 
-  public constructor(options: GithubCreateIssueCommentsCommandOptions) {
-    super(options);
-  }
-
   private async createComment(issueComment: IssueComment): Promise<Response | null> {
-    const { owner, repo } = this.options;
+    const { repoOwner, repoName } = this.config;
     const { issueNumber, commentBody } = issueComment;
-    const url = this.expendURL("https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/comments", {
-      owner,
-      repo,
+    const url = this.expendURL('https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/comments', {
+      owner: repoOwner,
+      repo: repoName,
       issueNumber,
     });
     const response = await this.fetch(url, {
-      method: "POST",
+      method: 'POST',
 
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
 
       body: JSON.stringify({
@@ -69,7 +61,6 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
       return null;
     }
 
-    //
     if (response.status !== 201) {
       throw new Error(`Failed to create a comment in issue '${issueNumber}'. Status code is ${response.status}`);
     }
@@ -78,14 +69,14 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
   }
 
   private async deleteComment(commentResource: CommentRestResource): Promise<void> {
-    const { owner, repo } = this.options;
-    const url = this.expendURL("https://api.github.com/repos/{owner}/{repo}/issues/comments/{commentId}", {
-      owner,
-      repo,
+    const { repoOwner, repoName } = this.config;
+    const url = this.expendURL('https://api.github.com/repos/{owner}/{repo}/issues/comments/{commentId}', {
+      repo: repoName,
+      owner: repoOwner,
       commentId: commentResource.id as string,
     });
     const response = await this.fetch(url, {
-      method: "DELETE",
+      method: 'DELETE',
     });
     const statusCode = response.status;
     const commentURL = commentResource.html_url;
@@ -102,12 +93,12 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
   public async do(): Promise<void> {
     const comments: Promise<void>[] = [];
 
-    for (const issueComment of this.options.issueComments) {
+    for (const issueComment of this.config.issueComments) {
       const createComment = async (): Promise<void> => {
         const response = await this.createComment(issueComment);
 
         if (response) {
-          const resource = await response.json();
+          const resource = await response.json() as Record<string, unknown>;
 
           this.createdCommentsResources.push(resource);
 
@@ -130,4 +121,4 @@ class GithubCreateIssueCommentsCommand extends GithubHttpCommand<GithubCreateIss
   }
 }
 
-export { GithubCreateIssueCommentsCommand, GithubCreateIssueCommentsCommandOptions };
+export { GithubCreateIssueCommentsCommand, GithubCreateIssueCommentsCommandConfig };

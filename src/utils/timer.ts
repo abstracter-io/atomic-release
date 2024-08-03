@@ -1,4 +1,4 @@
-import prettyMs from "pretty-ms";
+import prettyMs from 'pretty-ms';
 
 type Timer = {
   toString: () => string;

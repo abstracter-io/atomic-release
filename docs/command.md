@@ -3,7 +3,7 @@
 A command is an object with two key methods, "do" which performs an action, and "undo" which rolls back  
 any actions taken by the "do" method.
 
-### Options
+### Config
 
 ###### Optional properties are denoted by *
 
@@ -11,8 +11,8 @@ Type: `object literal`
 
 ##### logger*
 
-Type: [Logger](ports/logger.md)  
-Default: [processStdoutLogger](adapters/process-stdout-logger.md)
+Type: [Logger](./logger.md)  
+Default: [processStdoutLogger](./process-stdout-logger.md)
 
 ### Creating a Custom Command
 
@@ -20,9 +20,9 @@ Here's an example showing how to create a command:
 
 ```js
 const fs = require("fs");
-const { Command } = require("@abstracter/atomic-release");
+const { SDK } = require("@abstracter/atomic-release");
 
-class CreateFolderCommand extends Command {
+class CreateFolderCommand extends SDK.Command {
     constructor(options) {
         super(options);
         

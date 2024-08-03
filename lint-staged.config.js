@@ -1,15 +1,13 @@
-// eslint-disable-next-line node/no-unpublished-require
-const micromatch = require("micromatch");
+import micromatch from 'micromatch';
 
 // https://github.com/okonet/lint-staged
-module.exports = (allStagedFiles) => {
+export default (allStagedFiles) => {
   const commands = [];
-  const jsFiles = micromatch(allStagedFiles, ["**/*.js", "**/*.ts"]);
+  const jsFiles = micromatch(allStagedFiles, ['**/*.js', '**/*.ts'], {});
 
   if (jsFiles.length) {
-    commands.push(`npm run lint -- ${jsFiles.join(" ")}`);
-    commands.push("npm test");
-    commands.push("npm run test:integration");
+    commands.push(`npm run lint -- ${jsFiles.join(' ')}`);
+    commands.push('npm test');
   }
 
   return commands;

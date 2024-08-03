@@ -1,15 +1,21 @@
-import fs from "fs";
-import path from "path";
-import mime from "mime";
-import to from "await-to-js";
-import { Response } from "node-fetch";
+import mime from 'mime';
+import fs from 'node:fs';
+import path from 'node:path';
+import { to } from 'await-to-js';
+import { Readable } from 'node:stream';
 
-import { timer } from "../../utils/timer";
-import { GithubHttpCommand, GithubHttpCommandOptions } from "./github-http-command";
+import { timer } from '../../utils/timer.js';
+import { GithubHttpCommand, GithubHttpCommandConfig } from './github-http-command.js';
+
+type File = {
+  mimeType: string;
+  bytesSize: number;
+  readStream: Readable;
+};
 
 type Asset = {
   // An alternate short description of the asset.
-  // Used in place of the filename. (per Github docs)
+  // Used in place of the filename. (per GitHub docs)
   label?: string;
 
   name: string;
@@ -17,32 +23,26 @@ type Asset = {
   absoluteFilePath: string;
 };
 
-type File = {
-  mimeType: string;
-  bytesSize: number;
-  readStream: NodeJS.ReadableStream;
-};
-
 type ReleaseRestResource = Record<string, unknown>;
 
-type GithubCreateReleaseCommandOptions = GithubHttpCommandOptions & {
+type GithubCreateReleaseCommandConfig = GithubHttpCommandConfig & {
   // name of the repo
   repo: string;
 
-  // name of repo owner (the org name / user name)
+  // name of repo owner (the org name / username)
   owner: string;
 
-  // the name of a PRE existing tag (i.e tag present in the repo's remote)
+  // the name of a PRE existing tag (i.e. tag present in the repo's remote)
   tagName: string;
 
-  // when falsy, release is marked as pre release
+  // when falsy, release is marked as pre-release
   isStable?: boolean;
 
   name: string;
 
   body?: string;
 
-  assets?: Optional<Asset, "name">[];
+  assets?: (Omit<Asset, 'name'> & { name?: string })[];
 };
 
 /**
@@ -59,20 +59,16 @@ type GithubCreateReleaseCommandOptions = GithubHttpCommandOptions & {
     },
     assets: [
       { absoluteFilePath: "/home/rick/dev/package.json" },
-      { absoluteFilePath: "/home/rick/dev/build.json", label: "..." },
+      { absoluteFilePath: "/home/rick/dev/build.json", label: "." },
       { absoluteFilePath: "/home/rick/dev/package.json", name: "custom name" },
     ],
   });
  */
-class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCommandOptions> {
+class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCommandConfig> {
   private createdRelease: ReleaseRestResource;
 
-  public constructor(options: GithubCreateReleaseCommandOptions) {
-    super(options);
-  }
-
   private getAssets(): Asset[] {
-    const assets = this.options.assets ?? [];
+    const assets = this.config.assets ?? [];
     const uniquelyNamedAssets = new Map<string, Asset>();
 
     for (const asset of assets) {
@@ -81,7 +77,7 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
 
       if (previousAsset) {
         this.logger.warn(`An asset named '${name}' already exists`);
-        this.logger.warn("Duplicate asset will be filtered out");
+        this.logger.warn('Duplicate asset will be filtered out');
       }
       //
       else {
@@ -96,14 +92,14 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
   }
 
   private async createRelease(): Promise<ReleaseRestResource> {
-    const { owner, repo, name, tagName, body, isStable } = this.options;
+    const { owner, repo, name, tagName, body, isStable } = this.config;
     const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
-    const hasAssets = Array.isArray(this.options.assets) && this.options.assets.length > 0;
+    const hasAssets = Array.isArray(this.config.assets) && this.config.assets.length > 0;
     const response = await this.fetch(url, {
-      method: "POST",
+      method: 'POST',
 
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
 
       body: JSON.stringify({
@@ -127,10 +123,16 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
 
     if (stat) {
       if (stat.isFile()) {
+        const mimeType = mime.getType(path.extname(absoluteFilePath));
+
+        if (mimeType === null) {
+          throw new Error('unknown mime type');
+        }
+
         return {
+          mimeType,
           bytesSize: stat.size,
-          mimeType: mime.getType(path.extname(absoluteFilePath)),
-          readStream: fs.createReadStream(absoluteFilePath),
+          readStream: Readable.from(fs.createReadStream(absoluteFilePath, 'utf-8')),
         };
       }
     }
@@ -143,11 +145,11 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
   }
 
   private async deleteRelease(resource: ReleaseRestResource): Promise<void> {
-    const { owner, repo } = this.options;
+    const { owner, repo } = this.config;
     const releaseURL = resource.html_url;
     const url = `https://api.github.com/repos/${owner}/${repo}/releases/${resource.id}`;
     const response = await this.fetch(url, {
-      method: "DELETE",
+      method: 'DELETE',
     });
 
     if (response.status === 204) {
@@ -159,12 +161,12 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
     }
   }
 
-  private async publishRelease(url): Promise<ReleaseRestResource> {
+  private async publishRelease(url: string): Promise<ReleaseRestResource> {
     const response = await this.fetch(url, {
-      method: "POST",
+      method: 'POST',
 
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
 
       body: JSON.stringify({
@@ -176,7 +178,7 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
       throw new Error(`Failed to take release out of draft mode. Status code is ${response.status}`);
     }
 
-    return response.json();
+    return await response.json() as Record<string, unknown>;
   }
 
   private async uploadAsset(uploadURL: string, asset: Asset): Promise<Response> {
@@ -188,11 +190,11 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
     });
 
     return this.fetch(url, {
-      method: "POST",
+      method: 'POST',
 
       headers: {
-        "Content-Length": file.bytesSize.toString(),
-        "Content-Type": file.mimeType,
+        'Content-Length': file.bytesSize.toString(),
+        'Content-Type': file.mimeType,
       },
 
       body: file.readStream,
@@ -238,11 +240,11 @@ class GithubCreateReleaseCommand extends GithubHttpCommand<GithubCreateReleaseCo
     if (uploads.length) {
       await Promise.all(uploads);
 
-      this.createdRelease = await this.publishRelease(this.createdRelease.url);
+      this.createdRelease = await this.publishRelease(this.createdRelease.url as string);
     }
 
     this.logger.info(`Created release: ${this.createdRelease.html_url} (id: ${this.createdRelease.id})`);
   }
 }
 
-export { GithubCreateReleaseCommand, GithubCreateReleaseCommandOptions };
+export { GithubCreateReleaseCommand, GithubCreateReleaseCommandConfig };
