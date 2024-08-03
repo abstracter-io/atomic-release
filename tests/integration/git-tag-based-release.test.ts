@@ -530,11 +530,9 @@ describe("git tag based release", () => {
 
   test("generating version changelog fails when version does not exists", async () => {
     const version = "1.1.1";
-    const expectedError = new Error(`Could not find version ${version} conventional commits`);
+    const expectedError = new Error(`Could not find tag for version ${version}`);
 
-    expect(await release.getChangelogByVersion(version).catch((e) => {
-      return e;
-    })).toStrictEqual(expectedError);
+    await expect(release.getChangelogByVersion(version)).rejects.toStrictEqual(expectedError);
   });
 
   test("default commits filter throws when commit does not have 'type' property", async () => {

@@ -41,7 +41,7 @@ Default: `origin`
 Type: `string`  
 Default: `process.env.RELEASE_ACTOR`
 
-A shorthand to perform git commits using a specific author & committer email and name.
+A shorthand to perform Git commits using a specific author & committer email and name.
 
 Example:
 

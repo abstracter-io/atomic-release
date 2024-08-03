@@ -1,6 +1,6 @@
 # GitCommitCommand
 
-A git command that stages and commits files in a working tree.
+A Git command that stages and commits files.
 
 ### Config
 

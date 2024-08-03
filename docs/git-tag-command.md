@@ -1,6 +1,6 @@
 # GitTagCommand
 
-A git command to create a local/remote tag.
+A Git command to create a local/remote tag.
 
 ### Config
 

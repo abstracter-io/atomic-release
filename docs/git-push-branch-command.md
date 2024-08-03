@@ -1,6 +1,6 @@
 # GitPushBranchCommand
 
-A git command to push a local branch to a git remote.
+A Git command to push a local branch to a git remote.
 
 ### Config
 

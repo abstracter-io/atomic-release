@@ -1,6 +1,6 @@
 # GitSwitchCommand
 
-A git command that [switches](https://git-scm.com/docs/git-switch) to a desired branch.
+A Git command that [switches](https://git-scm.com/docs/git-switch) to a desired branch.
 
 > This command will create a branch in case it does not exist.
 
