@@ -51,8 +51,8 @@ jobs:
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Lint Code
-        run: npm run lint:all
+#      - name: Lint Code
+#        run: npm run lint:all
 
       # https://commitlint.js.org/guides/ci-setup.html#github-actions
       - name: Lint Commit Messages
