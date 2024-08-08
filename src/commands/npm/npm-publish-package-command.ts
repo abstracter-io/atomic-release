@@ -30,13 +30,13 @@ type NpmPublishPackageCommandConfig = NpmCommandConfig & {
 class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandConfig> {
   private publishedPackage: string;
 
-  private async publish(args: string): Promise<void> {
-    await this.exec(`npm publish ${args}`);
+  private async publish(args: string[]): Promise<void> {
+    await this.exec({ command: 'npm', args: ['publish', ...args] });
   }
 
   public async undo(): Promise<void> {
     if (this.publishedPackage && this.config.undoPublish === true) {
-      await this.exec(`npm unpublish ${this.publishedPackage}`);
+      await this.exec({ command: 'npm', args: ['unpublish', this.publishedPackage] });
     }
   }
 
@@ -62,7 +62,7 @@ class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandConfig
         this.logger.info(`Publishing '${name}@${version}' to registry '${registry}'`);
       }
 
-      await this.publish(args.join(' '));
+      await this.publish(args);
 
       this.logger.info(`Published package '${name}@${version}'`);
 

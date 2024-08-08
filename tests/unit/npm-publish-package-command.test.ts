@@ -1,7 +1,7 @@
 import { vitest, describe, test, expect } from 'vitest';
 
-import { Stubs } from '../stubs';
-import { Commands } from '../../src';
+import { Stubs } from '../stubs.js';
+import { Commands } from '../../src/index.js';
 
 const PACKAGE_JSON = {
   private: false,
@@ -48,9 +48,8 @@ describe('publish npm package', () => {
 
     expect(logger.info).toBeCalledWith(`Publishing '${PACKAGE_NAME_AND_VERSION}' using dist tag '${CMD_CONFIG.tag}'`);
 
-    expect(commandStub.createChildProcess).toBeCalledWith(`npm publish --tag ${CMD_CONFIG.tag}`, {
+    expect(commandStub.createChildProcess).toBeCalledWith({ command: 'npm', args: ['publish', '--tag', CMD_CONFIG.tag ]}, {
       cwd: CMD_CONFIG.workingDirectory,
-
     });
   });
 
@@ -67,9 +66,8 @@ describe('publish npm package', () => {
 
     expect(logger.info).toBeCalledWith(`Publishing '${PACKAGE_NAME_AND_VERSION}' to registry '${expectedRegistry}'`);
 
-    expect(commandStub.createChildProcess).toBeCalledWith(`npm publish --registry ${expectedRegistry}`, {
+    expect(commandStub.createChildProcess).toBeCalledWith({ command: 'npm', args: ['publish', '--registry', expectedRegistry] }, {
       cwd: CMD_CONFIG.workingDirectory,
-
     });
   });
 
@@ -111,7 +109,7 @@ describe('publish npm package', () => {
     });
   });
 
-  test('undo does not unpublish when \'undoPublish\' is not true', async () => {
+  test('undo does not unpublish when "undoPublish" is not true', async () => {
     const commandStub = new NpmPublishPackageCommandStub();
 
     await commandStub.do();
@@ -124,7 +122,7 @@ describe('publish npm package', () => {
     });
   });
 
-  test('undo unpublish when package was published and \'undoPublish\' is true', async () => {
+  test('undo unpublish when package was published and "undoPublish" is true', async () => {
     const commandStub = new NpmPublishPackageCommandStub({
       undoPublish: true,
     });
@@ -133,9 +131,8 @@ describe('publish npm package', () => {
 
     await commandStub.undo();
 
-    expect(commandStub.createChildProcess).toBeCalledWith(`npm unpublish ${PACKAGE_NAME_AND_VERSION}`, {
+    expect(commandStub.createChildProcess).toBeCalledWith({ command: 'npm', args: ['unpublish', PACKAGE_NAME_AND_VERSION] }, {
       cwd: CMD_CONFIG.workingDirectory,
-
     });
   });
 });
