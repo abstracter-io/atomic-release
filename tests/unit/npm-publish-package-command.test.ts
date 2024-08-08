@@ -5,7 +5,7 @@ import { Commands } from '../../src/index.js';
 
 const PACKAGE_JSON = {
   private: false,
-  name: 'test',
+  name: '@scope/name',
   version: '0.1.0',
 };
 
