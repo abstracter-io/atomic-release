@@ -1,6 +1,6 @@
 {
   "name": "@abstracter/atomic-release",
-  "version": "1.2.1-beta.2",
+  "version": "0.0.0",
   "description": "Automated atomic release using the command pattern.",
   "private": false,
   "type": "module",
@@ -60,7 +60,6 @@
     "lint-staged": "^15.2.8",
     "micromatch": "^4.0.7",
     "npm-check": "^6.0.1",
-    "parse-github-url": "^1.0.3",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
@@ -74,6 +73,7 @@
     "fetch-defaults": "^1.0.0",
     "mime": "^4.0.4",
     "parse-author": "^2.0.0",
+    "parse-github-url": "^1.0.3",
     "pretty-ms": "^9.1.0",
     "radash": "^12.1.0",
     "read-package-up": "^11.0.0",
