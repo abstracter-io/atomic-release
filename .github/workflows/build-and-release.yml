@@ -8,6 +8,7 @@ on:
 env:
   CI: true
   HUSKY: 0
+  EXEC_COMMAND_LOG_STD: NpmPublishPackageCommand
 
 jobs:
   build_and_release:
