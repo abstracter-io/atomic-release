@@ -31,7 +31,11 @@ class NpmPublishPackageCommand extends NpmCommand<NpmPublishPackageCommandConfig
   private publishedPackage: string;
 
   private async publish(args: string[]): Promise<void> {
-    await this.exec({ command: 'npm', args: ['publish', ...args] });
+    const { childProcess } = await this.exec({ command: 'npm', args: ['publish', ...args] });
+
+    if (childProcess.exitCode !== 0) {
+      throw new Error(`Publish failed. exit code is ${childProcess.exitCode}`);
+    }
   }
 
   public async undo(): Promise<void> {

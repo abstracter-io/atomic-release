@@ -27,7 +27,7 @@ class GitCommitCommand extends ExecCommand<GitCommitCommandConfig> {
     const { childProcess, stderr, stdout } = await this.exec(`git add ${Array.from(this.config.filePaths).join(' ')}`);
 
     if (childProcess.exitCode !== 0) {
-      throw new Error(`Staging failed, exit code is ${childProcess.exitCode} ${stderr} ${stdout}`);
+      throw new Error(`Staging failed. exit code is ${childProcess.exitCode} ${stderr} ${stdout}`);
     }
 
     this.filesStaged = true;
@@ -58,7 +58,7 @@ class GitCommitCommand extends ExecCommand<GitCommitCommandConfig> {
     });
 
     if (result.childProcess.exitCode !== 0) {
-      throw new Error(`Commit failed, exit code is ${result.childProcess.exitCode}`);
+      throw new Error(`Commit failed. exit code is ${result.childProcess.exitCode}`);
     }
 
     this.config.filePaths.forEach((filePath) => {

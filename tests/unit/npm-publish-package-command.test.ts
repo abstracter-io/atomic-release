@@ -38,6 +38,26 @@ class NpmPublishPackageCommandStub extends Commands.NpmPublishPackageCommand {
 describe('publish npm package', () => {
   const PACKAGE_NAME_AND_VERSION = `${PACKAGE_JSON.name}@${PACKAGE_JSON.version}`;
 
+  test('errors when exit code is not 0', async () => {
+    const code = 127;
+    const commandStub = new NpmPublishPackageCommandStub();
+
+    commandStub.createChildProcess.mockImplementationOnce(async () => {
+      const childProcess = Stubs.childProcess();
+
+      // @ts-ignore
+      childProcess.exitCode = code;
+
+      return {
+        stderr: '',
+        stdout: '',
+        childProcess,
+      }
+    })
+
+    await expect(commandStub.do()).rejects.toStrictEqual(new Error(`Publish failed. exit code is ${code}`));
+  });
+
   test('publishing to a specified dist tag', async () => {
     const logger = new Stubs.LoggerStub();
     const commandStub = new NpmPublishPackageCommandStub({
