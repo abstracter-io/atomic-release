@@ -23,7 +23,7 @@
     "lint": "eslint --format pretty --fix",
     "lint:all": "npm run lint -- .",
     "prepare": "husky",
-    "build": "tsc --build tsconfig.compile.json --pretty",
+    "build": "tsc --pretty",
     "postbuild": "copyfiles -u 1 src/**/*.d.ts build",
     "test": "vitest run",
     "release": "node scripts/release.js"
