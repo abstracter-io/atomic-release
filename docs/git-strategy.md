@@ -21,7 +21,7 @@ Specifies the branches where the strategy will run.
 #### gitClient*
 
 Type: [GitClient](./git-client.md)  
-Default: [GitExecaClient](./git-execa-client.md)
+Default: [GitExecClient](./git-exec-client.md)
 
 The default client uses the process current working directory and a git remote called `origin`
 

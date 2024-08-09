@@ -1,4 +1,4 @@
-# ExecaCommand
+# ExecCommand
 
 An abstract class with a method to create a child process using `node:child_process` module.
 
@@ -26,11 +26,11 @@ const { Commands } = require("@abstracter/atomic-release");
 
 class MoveCommand extends Commands.ExecCommand {
   async do() {
-    await this.execa("mv", ["a", "b"]);
+    await this.exec("mv", ["a", "b"]);
   }
   
   async undo() {
-    await this.execa("mv", ["b", "a"]);
+    await this.exec("mv", ["b", "a"]);
   }
 }
 ```

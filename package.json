@@ -47,7 +47,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@abstracter/atomic-release": "^2.1.0",
+    "@abstracter/atomic-release": "^2.1.1",
     "@abstracter/eslint-config": "^2.0.0",
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",

@@ -15,8 +15,8 @@ Default: [processStdoutLogger](../adapters/process-stdout-logger.md)
 
 #### gitClient*
 
-Type: [GitClient](../ports/git-client.md)  
-Default: [GitExecaClient](../adapters/git-execa-client.md)
+Type: [GitClient](./git-client.md)  
+Default: [GitExecClient](./git-exec-client.md)
 
 #### remote*
 

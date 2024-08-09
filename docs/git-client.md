@@ -115,4 +115,4 @@ interface GitClient {
 }
 ```
 
-See [GitExecaClient](./git-execa-client.md) for a reference implementation
+See [GitExecClient](./git-exec-client.md) for a reference implementation
