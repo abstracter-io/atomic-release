@@ -4,6 +4,7 @@
   "description": "Automated atomic release using the command pattern.",
   "private": false,
   "type": "module",
+  "types": "./build/index.d.ts",
   "exports": {
     "types": "./build/index.d.ts",
     "default": "./build/index.js"
