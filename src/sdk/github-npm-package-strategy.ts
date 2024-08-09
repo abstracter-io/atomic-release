@@ -20,6 +20,7 @@ type GithubNpmPackageStrategyConfig = {
   gitRemote?: string;
   gitClient?: GitClient;
   syncRemote?: boolean;
+  stableBranchName?: string;
   workingDirectory?: string;
   changelogFilePath?: string;
   maintainChangelog?: boolean;
@@ -83,6 +84,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
     gitClient: config.gitClient ?? new GitExecClient(), // TODO: This should be wrapped by a cache?
     gitRemote: config.gitRemote ?? 'origin',
     syncRemote: config.syncRemote ?? false,
+    stableBranchName: config.stableBranchName ?? 'main',
     workingDirectory: config.workingDirectory ?? process.cwd(),
     changelogFilePath: config.changelogFilePath ?? `${pkg.folderPath}/CHANGELOG.md`,
     maintainChangelog: config.maintainChangelog ?? false,
@@ -136,7 +138,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
       body: changelog ?? undefined,
       logger: config.logger,
       name: tagName,
-      isStable: branchName === 'main',
+      isStable: branchName === config.stableBranchName,
       tagName: tagName,
       repo: parsedGitHubURL.repoName,
       owner: parsedGitHubURL.repoOwner,
@@ -227,7 +229,7 @@ const githubNpmPackageStrategy = async (config: GithubNpmPackageStrategyConfig =
 
   strategy.addCommandProvider(async (config) => {
     const branchName = await config.gitClient.refName('HEAD');
-    const distTag = branchName === 'main' ? 'latest' : branchName;
+    const distTag = branchName === config.stableBranchName ? 'latest' : branchName;
 
     return new Commands.NpmPublishPackageCommand({
       tag: distTag,

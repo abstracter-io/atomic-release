@@ -34,7 +34,6 @@ class Strategy<T extends StrategyConfig = StrategyConfig> {
 
       logger.debug(`Executing command '${commandName}'`);
 
-      // eslint-disable-next-line no-await-in-loop
       const [error] = await to(command.do());
 
       logger.debug(`Executing command '${commandName}' completed in ~${executeTimer}`);
@@ -46,7 +45,6 @@ class Strategy<T extends StrategyConfig = StrategyConfig> {
           const command = commands[i];
 
           if (command) {
-            // eslint-disable-next-line no-await-in-loop
             const [error] = await to(command.undo());
 
             if (error) {

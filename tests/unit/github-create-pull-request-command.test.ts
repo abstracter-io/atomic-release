@@ -1,15 +1,10 @@
-import to from 'await-to-js';
-import { vitest, describe, test, expect, beforeEach } from 'vitest';
+import { vitest, describe, test, expect } from 'vitest';
 
-import { Stubs } from '../stubs';
-import { Commands } from '../../src';
-
-const fetch = vitest.fn();
-
-const LOGGER = new Stubs.LoggerStub();
+import { Stubs } from '../stubs.js';
+import { Commands } from '../../src/index.js';
 
 const CMD_CONFIG: Commands.GithubCreatePullRequestCommandConfig = {
-  logger: LOGGER,
+  logger: Stubs.NoopLogger.INSTANCE,
   fetch,
 
   owner: 'nintendo',
@@ -23,6 +18,12 @@ const CMD_CONFIG: Commands.GithubCreatePullRequestCommandConfig = {
     'X-Custom-Header': '1',
   },
 };
+const V3_MIME_TYPE = 'application/vnd.github.v3+json';
+const PR_NUMBER = 1;
+const PR_URL = `https://github.com/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pull/${PR_NUMBER}`;
+const CREATE_PR_URL = `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pulls`;
+const UPDATE_PR_URL = `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pulls/${PR_NUMBER}`;
+const CREATED_PR_ID = Date.now();
 
 class GithubCreatePullRequestCommandStub extends Commands.GithubCreatePullRequestCommand {
   public constructor(config?: Partial<Commands.GithubCreatePullRequestCommandConfig>) {
@@ -30,41 +31,28 @@ class GithubCreatePullRequestCommandStub extends Commands.GithubCreatePullReques
   }
 }
 
-describe('create a github pull request', () => {
-  const V3_MIME_TYPE = 'application/vnd.github.v3+json';
-  const CREATED_PR_ID = Date.now();
-  const pullRequestNumber = 1;
-  const pullRequestURL = `https://github.com/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pull/${pullRequestNumber}`;
-  const createPullRequestURL = `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pulls`;
-  const updatePullRequestURL = `https://api.github.com/repos/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pulls/${pullRequestNumber}`;
-
-  beforeEach(() => {
-    fetch.mockImplementation(async () => {
-      const body = JSON.stringify({
-        id: CREATED_PR_ID,
-        html_url: `https://github.com/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pull/1`,
-        number: 1,
-      });
-
-      return new Response(body, {
-        status: 201,
-        statusText: 'Created',
-      });
-    });
+const mockedFetch = () => vitest.fn(async () => {
+  const body = JSON.stringify({
+    id: CREATED_PR_ID,
+    html_url: `https://github.com/${CMD_CONFIG.owner}/${CMD_CONFIG.repo}/pull/1`,
+    number: 1,
   });
 
+  return new Response(body, {
+    status: 201,
+    statusText: 'Created',
+  });
+});
+
+describe('create a github pull request', () => {
   test('pull request is created', async () => {
-    const gitTagCommandStub = new GithubCreatePullRequestCommandStub();
+    const fetch = mockedFetch();
+    const logger = new Stubs.LoggerStub();
+    const gitTagCommandStub = new GithubCreatePullRequestCommandStub({ logger, fetch });
 
     await gitTagCommandStub.do();
 
-    const [url, request] = fetch.mock.calls[0];
-
-    request.body = JSON.parse(request.body);
-
-    expect(url).toStrictEqual(createPullRequestURL);
-
-    expect(request).toMatchObject({
+    expect(fetch).toBeCalledWith(CREATE_PR_URL, {
       method: 'POST',
 
       headers: {
@@ -72,23 +60,25 @@ describe('create a github pull request', () => {
         Accept: V3_MIME_TYPE,
       },
 
-      body: {
-        base: CMD_CONFIG.base,
+      body: JSON.stringify({
         head: CMD_CONFIG.head,
+        base: CMD_CONFIG.base,
         body: CMD_CONFIG.body,
         title: CMD_CONFIG.title,
-      },
+      }),
     });
 
-    expect(LOGGER.info).toHaveBeenCalledWith(`Created pull request: ${pullRequestURL} (id: ${CREATED_PR_ID})`);
+    expect(logger.info).toHaveBeenCalledWith(`Created pull request: ${PR_URL} (id: ${CREATED_PR_ID})`);
   });
 
   test('undo closes pull request when it was created', async () => {
-    const gitTagCommandStub = new GithubCreatePullRequestCommandStub();
+    const fetch = mockedFetch();
+    const logger = new Stubs.LoggerStub();
+    const gitTagCommandStub = new GithubCreatePullRequestCommandStub({ logger, fetch });
 
     await gitTagCommandStub.do();
 
-    fetch.mockClear().mockImplementation(async () => {
+    fetch.mockImplementation(async () => {
       return new Response('', {
         status: 200,
         statusText: 'OK',
@@ -97,13 +87,7 @@ describe('create a github pull request', () => {
 
     await gitTagCommandStub.undo();
 
-    const [url, request] = fetch.mock.calls[0];
-
-    request.body = JSON.parse(request.body);
-
-    expect(url).toStrictEqual(updatePullRequestURL);
-
-    expect(request).toMatchObject({
+    expect(fetch).toBeCalledWith(UPDATE_PR_URL, {
       method: 'PATCH',
 
       headers: {
@@ -111,50 +95,54 @@ describe('create a github pull request', () => {
         Accept: V3_MIME_TYPE,
       },
 
-      body: {
+      body: JSON.stringify({
         state: 'closed',
-      },
+      }),
     });
 
-    expect(LOGGER.info).toHaveBeenCalledWith(`Closed pull request: ${pullRequestURL}`);
+    expect(logger.info).toHaveBeenCalledWith(`Closed pull request: ${PR_URL}`);
   });
 
   test('execution fails when response status code is not 201', async () => {
+    const fetch = mockedFetch();
     const expectedStatusCode = 200;
-    const gitTagCommandStub = new GithubCreatePullRequestCommandStub();
+    const gitTagCommandStub = new GithubCreatePullRequestCommandStub({ fetch });
+    const expectedError = new Error(`Failed to create pull request. Status code is ${expectedStatusCode}`);
 
-    fetch.mockClear().mockImplementation(async () => {
+    fetch.mockImplementation(async () => {
       return new Response('', {
         status: expectedStatusCode,
         statusText: 'OK',
       });
     });
 
-    const [error] = await to(gitTagCommandStub.do());
-
-    expect(error).toEqual(new Error(`Failed to create pull request. Status code is ${expectedStatusCode}`));
+    await expect(gitTagCommandStub.do()).rejects.toEqual(expectedError);
   });
 
   test('undo logs a message when failing to close pull request', async () => {
-    const gitTagCommandStub = new GithubCreatePullRequestCommandStub();
+    const fetch = mockedFetch();
+    const logger = new Stubs.LoggerStub();
+    const gitTagCommandStub = new GithubCreatePullRequestCommandStub({ logger, fetch });
 
     await gitTagCommandStub.do();
+
     await gitTagCommandStub.undo();
 
-    expect(LOGGER.warn).toBeCalledWith(`Failed to close pull request ${pullRequestURL}. Status code is 201`);
+    expect(logger.warn).toBeCalledWith(`Failed to close pull request ${PR_URL}. Status code is 201`);
   });
 
   test('undo does not close pull request when it was not created', async () => {
-    const gitTagCommandStub = new GithubCreatePullRequestCommandStub();
+    const fetch = mockedFetch();
+    const gitTagCommandStub = new GithubCreatePullRequestCommandStub({ fetch });
 
-    fetch.mockClear().mockImplementation(async () => {
+    fetch.mockImplementation(async () => {
       return new Response('', {
-        status: 200,
-        statusText: 'OK',
+        status: 403,
+        statusText: 'FORBIDDEN',
       });
     });
 
-    await to(gitTagCommandStub.do());
+    await gitTagCommandStub.do().catch(e => e);
 
     fetch.mockClear();
 

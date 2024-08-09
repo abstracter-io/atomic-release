@@ -1,3 +1,3 @@
-// import all from '@abstracter/eslint-config/src/all.js';
+import { typescript } from '@abstracter/eslint-config';
 
-export default [];
+export default typescript;

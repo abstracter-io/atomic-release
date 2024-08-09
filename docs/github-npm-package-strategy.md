@@ -28,12 +28,17 @@ Type: `boolean`
 Default: `false`
 
 This flag controls whether to commit and push the package.json  
-and the changelog file in case `maintainChangelog` is true  
+and, in case `maintainChangelog` is true, the changelog file as well.
 
 Enabling this when the remote branch is protected will require a bypass.  
 See [discussions/25305](https://github.com/orgs/community/discussions/25305)
 
-See [discussions/25305](https://github.com/orgs/community/discussions/25305)
+#### stableBranchName*
+Type: `string`  
+Default: `main`
+
+When the branch name is equal to configured value the published npm dist tag is latest.  
+Additionally. this determines the GitHub `prerelease` flag. See ["Create a release"](https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#create-a-release)
 
 #### logger*
 

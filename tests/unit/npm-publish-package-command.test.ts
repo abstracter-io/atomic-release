@@ -45,15 +45,15 @@ describe('publish npm package', () => {
     commandStub.createChildProcess.mockImplementationOnce(async () => {
       const childProcess = Stubs.childProcess();
 
-      // @ts-ignore
+      // @ts-expect-error ignore this
       childProcess.exitCode = code;
 
       return {
         stderr: '',
         stdout: '',
         childProcess,
-      }
-    })
+      };
+    });
 
     await expect(commandStub.do()).rejects.toStrictEqual(new Error(`Publish failed. exit code is ${code}`));
   });
@@ -68,7 +68,7 @@ describe('publish npm package', () => {
 
     expect(logger.info).toBeCalledWith(`Publishing '${PACKAGE_NAME_AND_VERSION}' using dist tag '${CMD_CONFIG.tag}'`);
 
-    expect(commandStub.createChildProcess).toBeCalledWith({ command: 'npm', args: ['publish', '--tag', CMD_CONFIG.tag ]}, {
+    expect(commandStub.createChildProcess).toBeCalledWith({ command: 'npm', args: ['publish', '--tag', CMD_CONFIG.tag] }, {
       cwd: CMD_CONFIG.workingDirectory,
     });
   });

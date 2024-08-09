@@ -48,7 +48,7 @@ type GithubCreatePullRequestCommandConfig = GithubHttpCommandConfig & {
  });
  */
 class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullRequestCommandConfig> {
-  private createdPullRequest: PullRequestRestResource;
+  private pullRequestResource: PullRequestRestResource;
 
   private async createPullRequest(): Promise<PullRequestRestResource> {
     const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/pulls`;
@@ -75,11 +75,11 @@ class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullR
   }
 
   public async undo(): Promise<void> {
-    if (this.createdPullRequest) {
+    if (this.pullRequestResource) {
       // Can't delete a pull-request, the next best thing is to close it
-      const createdPullRequest = this.createdPullRequest;
-      const pullRequestURL = createdPullRequest.html_url;
-      const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/pulls/${createdPullRequest.number}`;
+      const pr = this.pullRequestResource;
+      const pullRequestURL = pr.html_url;
+      const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/pulls/${pr.number}`;
       const response = await this.fetch(url, {
         method: 'PATCH',
 
@@ -95,7 +95,6 @@ class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullR
       if (response.status === 200) {
         this.logger.info(`Closed pull request: ${pullRequestURL}`);
       }
-      //
       else {
         this.logger.warn(`Failed to close pull request ${pullRequestURL}. Status code is ${response.status}`);
       }
@@ -105,7 +104,7 @@ class GithubCreatePullRequestCommand extends GithubHttpCommand<GithubCreatePullR
   public async do(): Promise<void> {
     const pullRequestRestResource = await this.createPullRequest();
 
-    this.createdPullRequest = pullRequestRestResource;
+    this.pullRequestResource = pullRequestRestResource;
 
     this.logger.info(`Created pull request: ${pullRequestRestResource.html_url} (id: ${pullRequestRestResource.id})`);
   }

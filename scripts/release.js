@@ -2,6 +2,4 @@ import { SDK } from '@abstracter/atomic-release';
 
 const strategy = await SDK.githubNpmPackageStrategy();
 
-await strategy.run().catch((err) => {
-  console.error(err);
-});
+await strategy.run();
