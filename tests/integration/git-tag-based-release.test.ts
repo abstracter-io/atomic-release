@@ -20,6 +20,38 @@ const releaseOptions = () => {
 };
 
 describe('git tag based release', () => {
+  test('default release commits', async () => {
+    const cases = [
+      { version: '1.0.1', commit: { ...Stubs.conventionalCommit(), subject: 'perf: ...' } },
+      { version: '1.0.1', commit: { ...Stubs.conventionalCommit(), subject: 'fix: ...' } },
+      { version: '1.1.0', commit: { ...Stubs.conventionalCommit(), subject: 'feat: ...' } },
+      { version: '1.1.0', commit: { ...Stubs.conventionalCommit(), subject: 'feature: ...' } },
+      { version: '1.0.0', commit: { ...Stubs.conventionalCommit(), subject: 'docs: ...' } },
+    ];
+
+    await Promise.all(cases.map(async ({ version, commit }) => {
+      const gitClient = new Stubs.GitClientStub();
+      const release = await SDK.gitTagBasedRelease({
+        gitClient,
+        ...releaseOptions(),
+      });
+
+      gitClient.refName.mockImplementation(async () => {
+        return Stubs.GitClientStub.STABLE_BRANCH_NAME;
+      });
+
+      gitClient.listTags.mockImplementation(async () => {
+        return [{ name: `v1.0.0`, hash: Stubs.GitClientStub.HASH }];
+      });
+
+      gitClient.commits.mockImplementationOnce(async () => {
+        return [commit];
+      });
+
+      await expect(release.getNextVersion(), commit.subject).resolves.toStrictEqual(version);
+    }));
+  });
+
   test('filter non release commits', async () => {
     const expectedCommit = Stubs.conventionalCommit();
     const isReleaseCommit = vitest.fn();
@@ -71,7 +103,7 @@ describe('git tag based release', () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [previousTag];
     });
 
@@ -99,7 +131,7 @@ describe('git tag based release', () => {
       return [Stubs.conventionalCommit()];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [previousTag];
     });
 
@@ -128,7 +160,7 @@ describe('git tag based release', () => {
       return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [previousTag];
     });
 
@@ -144,13 +176,13 @@ describe('git tag based release', () => {
       gitClient,
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [tag];
     });
 
-    expect(await release.listVersions()).toStrictEqual([version]);
+    expect(await release.listVersions(1)).toStrictEqual([version]);
 
-    expect(gitClient.mergedTags).toBeCalledWith('HEAD');
+    expect(gitClient.listTags).toBeCalledWith();
   });
 
   test('release change log is generated', async () => {
@@ -218,30 +250,11 @@ describe('git tag based release', () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [previousTag];
     });
 
     expect(await release.getMentionedIssues()).toStrictEqual(new Set(['3', '39', '46', '999']));
-  });
-
-  test('previous version is latest stable', async () => {
-    const expectedVersion = '2.0.0';
-    const gitClient = new Stubs.GitClientStub();
-    const release = await SDK.gitTagBasedRelease({
-      ...releaseOptions(),
-      gitClient,
-    });
-
-    gitClient.refName.mockImplementation(async () => {
-      return Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME;
-    });
-
-    gitClient.mergedTags.mockImplementation(async () => {
-      return [{ name: `v${expectedVersion}`, hash: Stubs.GitClientStub.HASH }];
-    });
-
-    expect(await release.getPreviousVersion()).toStrictEqual(expectedVersion);
   });
 
   test('non semantic tag names are filtered', async () => {
@@ -254,11 +267,11 @@ describe('git tag based release', () => {
       gitClient,
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [tag];
     });
 
-    expect(await release.listVersions()).toHaveLength(0);
+    expect(await release.listVersions(1)).toHaveLength(0);
 
     expect(logger.debug).toBeCalledWith(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
   });
@@ -285,7 +298,7 @@ describe('git tag based release', () => {
       ];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [previousTag];
     });
 
@@ -298,7 +311,7 @@ describe('git tag based release', () => {
       ...releaseOptions(),
       gitClient,
     });
-    const versions = await release.listVersions();
+    const versions = await release.listVersions(1);
 
     for (const version of versions) {
       const changelog = await release.getChangelogByVersion(version);
@@ -322,7 +335,7 @@ describe('git tag based release', () => {
       return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [];
     });
 
@@ -331,12 +344,7 @@ describe('git tag based release', () => {
     expect(logger.info).toBeCalledWith(`Could not find a previous version. Will use ${initialVersion} as initial version`);
   });
 
-  test('previous version is the highest released version', async () => {
-    const tags = [
-      { name: 'v0.1.0', hash: Stubs.GitClientStub.HASH },
-      { name: 'v0.2.0', hash: Stubs.GitClientStub.HASH },
-      { name: 'v0.3.0', hash: Stubs.GitClientStub.HASH },
-    ];
+  test('previous version is the most recent stable version', async () => {
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
@@ -344,17 +352,42 @@ describe('git tag based release', () => {
     });
 
     gitClient.refName.mockImplementation(async () => {
-      return Stubs.GitClientStub.STABLE_BRANCH_NAME;
+      return Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
-      return tags;
+    gitClient.listTags.mockImplementation(async () => {
+      // 1.0.1 is more recent (thus previous) than versions with prerelease components
+      return [
+        { name: 'v1.0.0-beta.0', hash: Stubs.GitClientStub.HASH },
+        { name: `v1.0.1`, hash: Stubs.GitClientStub.HASH },
+      ];
     });
 
-    expect(await release.getPreviousVersion()).toStrictEqual('0.3.0');
+    await expect(release.getPreviousVersion()).resolves.toStrictEqual('1.0.1');
   });
 
-  test('rawConventionalCommits is called with \'since\' range', async () => {
+  test('previous version is most recent prerelease version', async () => {
+    const gitClient = new Stubs.GitClientStub();
+    const release = await SDK.gitTagBasedRelease({
+      ...releaseOptions(),
+      gitClient,
+    });
+
+    gitClient.refName.mockImplementation(async () => {
+      return Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME;
+    });
+
+    gitClient.listTags.mockImplementation(async () => {
+      return [
+        { name: `v1.0.0`, hash: Stubs.GitClientStub.HASH },
+        { name: `v1.0.1-beta.0`, hash: Stubs.GitClientStub.HASH },
+      ];
+    });
+
+    await expect(release.getPreviousVersion()).resolves.toStrictEqual('1.0.1-beta.0');
+  });
+
+  test('rawConventionalCommits is called with "since" range', async () => {
     const rawConventionalCommits = vitest.fn();
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
@@ -372,7 +405,7 @@ describe('git tag based release', () => {
     expect(rawConventionalCommits).toBeCalledWith(`${Stubs.GitClientStub.HASH}..`);
   });
 
-  test('rawConventionalCommits is called with \'until\' range', async () => {
+  test('rawConventionalCommits is called with "until" range', async () => {
     const rawConventionalCommits = vitest.fn();
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
@@ -385,7 +418,7 @@ describe('git tag based release', () => {
       return [];
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [];
     });
 
@@ -407,7 +440,7 @@ describe('git tag based release', () => {
       return Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [
         preReleaseTag,
         stableTag,
@@ -437,7 +470,7 @@ describe('git tag based release', () => {
       return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [];
     });
 
@@ -472,7 +505,7 @@ describe('git tag based release', () => {
       return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
-    gitClient.mergedTags.mockImplementation(async () => {
+    gitClient.listTags.mockImplementation(async () => {
       return [tag];
     });
 
@@ -487,38 +520,6 @@ describe('git tag based release', () => {
     expect(logger.warn).toBeCalledWith(`You can fix this by branching from ${tag.hash}`);
   });
 
-  test('default release commits are \'perf\', \'fix\' or \'feat\' / \'feature\'', async () => {
-    const cases = [
-      { version: '1.0.1', commit: { ...Stubs.conventionalCommit(), subject: 'perf: ...' } },
-      { version: '1.0.1', commit: { ...Stubs.conventionalCommit(), subject: 'fix: ...' } },
-      { version: '1.1.0', commit: { ...Stubs.conventionalCommit(), subject: 'feat: ...' } },
-      { version: '1.1.0', commit: { ...Stubs.conventionalCommit(), subject: 'feature: ...' } },
-      { version: '1.0.0', commit: { ...Stubs.conventionalCommit(), subject: 'docs: ...' } },
-    ];
-
-    await Promise.all(cases.map(async ({ version, commit }) => {
-      const gitClient = new Stubs.GitClientStub();
-      const release = await SDK.gitTagBasedRelease({
-        gitClient,
-        ...releaseOptions(),
-      });
-
-      gitClient.refName.mockImplementation(async () => {
-        return Stubs.GitClientStub.STABLE_BRANCH_NAME;
-      });
-
-      gitClient.mergedTags.mockImplementation(async () => {
-        return [{ name: `v1.0.0`, hash: Stubs.GitClientStub.HASH }];
-      });
-
-      gitClient.commits.mockImplementationOnce(async () => {
-        return [commit];
-      });
-
-      await expect(release.getNextVersion(), commit.subject).resolves.toStrictEqual(version);
-    }));
-  });
-
   test('generating version changelog fails when version does not exists', async () => {
     const version = '1.1.1';
     const gitClient = new Stubs.GitClientStub();
@@ -531,7 +532,7 @@ describe('git tag based release', () => {
     await expect(release.getChangelogByVersion(version)).rejects.toStrictEqual(expectedError);
   });
 
-  test('default commits filter throws when commit does not have \'type\' property', async () => {
+  test('default commits filter throws when commit does not have "type" property', async () => {
     const gitClient = new Stubs.GitClientStub();
     const preset = await conventionalChangelogPreset();
     const expectedError = new Error('Non supported conventional commit. Provide a custom filter.');

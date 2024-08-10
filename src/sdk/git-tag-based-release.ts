@@ -6,8 +6,8 @@ import { writeChangelogString, Options as WriterOptions, Context as WriterContex
 
 import { Logger } from './logger.js';
 import { Release } from './release.js';
+import { GitExecClient, Tag } from './git-exec-client.js';
 import { processStdoutLogger } from './process-stdout-logger.js';
-import { GitExecClient, MergedTag } from './git-exec-client.js';
 
 type ConventionalPreset = {
   parser: ParserOptions;
@@ -34,12 +34,12 @@ type GitTagBasedReleaseConfig = {
 
   conventionalChangelogPreset?: ConventionalPreset;
 
-  conventionalChangelogWriterContext: WriterContext | null;
+  conventionalChangelogWriterContext?: WriterContext | null;
 };
 
 type Options = Required<GitTagBasedReleaseConfig>;
 
-const sortTags = (tags: MergedTag[]): MergedTag[] => {
+const sortTags = (tags: Tag[]): Tag[] => {
   return tags.sort((a, b) => {
     return semver.rcompare(a.name, b.name);
   });
@@ -151,7 +151,7 @@ const presetBumpLevelToSemanticComponent = (level: number): string => {
   throw new Error(`unexpected level: ${level}`);
 };
 
-const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Release> => {
+const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig = {}): Promise<Release> => {
   const { logger, ...opt } = await defaultConfig(config);
   const preset = opt.conventionalChangelogPreset;
   const gitClient = opt.gitClient;
@@ -169,16 +169,15 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
     return commitParser.parse(rawConventionalCommit);
   };
 
-  const getMergedTags = memo(async (): Promise<MergedTag[]> => {
-    const [preReleaseId, mergedHeadTags] = await Promise.all([
+  const getTags = memo(async (): Promise<Tag[]> => {
+    const [preReleaseId, tags] = await Promise.all([
       getPreReleaseId(),
-      gitClient.mergedTags('HEAD'),
+      gitClient.listTags(),
     ]);
-    const stableTags: MergedTag[] = [];
-    const branchTags: MergedTag[] = [];
-    const filteredTags: MergedTag[] = [];
+    const filteredTags: Tag[] = [];
+    const selectedTags: Tag[] = [];
 
-    for (const tag of mergedHeadTags) {
+    for (const tag of tags) {
       const preReleaseComponents = semver.prerelease(tag.name) as string[] | null;
       const tagPreReleaseId = preReleaseComponents?.[0] ?? undefined;
 
@@ -188,10 +187,10 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
         filteredTags.push(tag);
       }
       else if (tagPreReleaseId === undefined) {
-        stableTags.push(tag);
+        selectedTags.push(tag);
       }
       else if (preReleaseId && tagPreReleaseId === preReleaseId) {
-        branchTags.push(tag);
+        selectedTags.push(tag);
       }
     }
 
@@ -199,11 +198,11 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
       logger.info(`Filtered ${filteredTags.length} tag(s)`);
     }
 
-    return [...sortTags(branchTags), ...sortTags(stableTags)];
+    return sortTags(selectedTags);
   });
 
   const getConventionalCommits = memo(async (): Promise<ConventionalCommit[]> => {
-    const tags = await getMergedTags();
+    const tags = await getTags();
     const until = await gitClient.refHash('HEAD');
     const since = tags[0]?.hash;
     const range = since ? `${since}..` : until;
@@ -220,14 +219,14 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
   });
 
   const getVersionConventionalCommits = memo(async (version: string): Promise<ConventionalCommit[]> => {
-    const mergedTags = await getMergedTags();
-    const versionIndex = mergedTags.findIndex(tag => clean(tag.name) === version);
+    const tags = await getTags();
+    const versionIndex = tags.findIndex(tag => clean(tag.name) === version);
 
     // ['1.3.0', '1.2.0', '1.1.0']
     //    ^ ------ ^ ------- ^
     if (versionIndex !== -1) {
-      const versionTag = mergedTags[versionIndex];
-      const previousTag = mergedTags[versionIndex + 1];
+      const versionTag = tags[versionIndex];
+      const previousTag = tags[versionIndex + 1];
       const range = previousTag ? `${previousTag.hash}..${versionTag.hash}` : versionTag.hash;
       const rawConventionalCommits = await opt.rawConventionalCommits(range);
       const conventionalCommits: ConventionalCommit[] = [];
@@ -258,7 +257,7 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
   // Public methods
   // ==============
   const listVersions = memo(async (max = 1): Promise<string[]> => {
-    const tags = await getMergedTags();
+    const tags = await getTags();
 
     tags.length = Math.min(tags.length, max);
 
@@ -317,7 +316,7 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig): Promise<Rel
   });
 
   const getPreviousVersion = memo(async (): Promise<string> => {
-    const versions = await listVersions();
+    const versions = await listVersions(1);
 
     if (versions.length) {
       return versions[0];

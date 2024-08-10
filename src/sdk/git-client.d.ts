@@ -22,7 +22,7 @@ type Commit = {
   };
 };
 
-type MergedTag = {
+type Tag = {
   hash: string;
   name: string;
 };
@@ -36,11 +36,11 @@ interface GitClient {
 
   commits(range: string): Promise<Commit[]>;
 
-  mergedTags(ref: string): Promise<MergedTag[]>;
+  listTags(ref: string): Promise<Tag[]>;
 
   remoteTagHash(tagName: string): Promise<string | null>;
 
   remoteBranchHash(branchName?: string): Promise<string | null>;
 }
 
-export type { GitClient, MergedTag, Commit };
+export type { GitClient, Tag, Commit };
