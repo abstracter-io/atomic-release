@@ -90,15 +90,15 @@ class GitClientStub extends SDK.GitExecClient {
     return [conventionalCommit()];
   });
 
-  cliVersion = vitest.fn(async () => {
-    return '2.7.0';
-  });
-
-  mergedTags = vitest.fn(async () => {
+  listTags = vitest.fn(async () => {
     const name = 'v0.1.0';
     const hash = GitClientStub.HASH;
 
     return [{ name, hash }];
+  });
+
+  cliVersion = vitest.fn(async () => {
+    return '2.7.0';
   });
 
   remoteTagHash = vitest.fn(async () => {

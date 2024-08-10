@@ -85,7 +85,7 @@ interface GitClient {
    *   name: "v1.0.0",
    * }];
    */  
-  mergedTags(ref: string): Promise<MergedTag[]>;
+  listTags(): Promise<Tag[]>;
 
   /**
    * @param tagName - The tag name to get the remote hash for

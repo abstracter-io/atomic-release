@@ -1,5 +1,5 @@
 interface Release {
-  listVersions(max: number = 1): Promise<string[]>;
+  listVersions(max: number): Promise<string[]>;
 
   getChangelog(): Promise<string | null>;
 

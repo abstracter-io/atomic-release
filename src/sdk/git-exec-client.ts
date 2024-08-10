@@ -1,8 +1,6 @@
-import semver from 'semver';
-
 import { exec, ExecOptions } from '../utils/exec.js';
 
-import type { GitClient, MergedTag, Commit } from './git-client.js';
+import type { GitClient, Tag, Commit } from './git-client.js';
 
 type GitExecClientConfig = {
   remote: string;
@@ -121,32 +119,23 @@ class GitExecClient implements GitClient {
     return commits;
   }
 
-  async mergedTags(ref: string): Promise<MergedTag[]> {
-    const minCliVersion = '2.7.0';
-    const version = await this.cliVersion();
+  async listTags(): Promise<Tag[]> {
+    const tags: Tag[] = [];
+    const delimiter = ':++:';
+    const { stdout } = await this.cli(`tag --format=%(refname:strip=2)${delimiter}%(objectname)`);
 
-    // The following git command requires git CLI version to be >= 2.7.0
-    // https://stackoverflow.com/a/39084124/1614199
-    if (semver.satisfies(version, `>= ${minCliVersion}`)) {
-      const tags: MergedTag[] = [];
-      const delimiter = ':++:';
-      const { stdout } = await this.cli(`tag --merged=${ref} --format=%(refname:strip=2)${delimiter}%(objectname)`);
+    for (const tag of stdout.split('\n')) {
+      if (tag.length) {
+        const [name, hash] = tag.split(delimiter);
 
-      for (const tag of stdout.split('\n')) {
-        if (tag.length) {
-          const [name, hash] = tag.split(delimiter);
-
-          tags.push({
-            hash,
-            name,
-          });
-        }
+        tags.push({
+          hash,
+          name,
+        });
       }
-
-      return tags;
     }
 
-    throw new Error(`Git version >= ${minCliVersion} is required. Found ${version}.`);
+    return tags;
   }
 
   async remoteTagHash(tagName: string): Promise<string | null> {
@@ -171,4 +160,4 @@ class GitExecClient implements GitClient {
   }
 }
 
-export { GitExecClient, GitExecClientConfig, MergedTag };
+export { GitExecClient, GitExecClientConfig, Tag };
