@@ -19,11 +19,11 @@ abstract class ExecCommand<T extends ExecCommandConfig> extends Command<T> {
 
     if (log) {
       if (stdout.length) {
-        this.logger.error(stdout);
+        this.logger.info(stdout);
       }
 
       if (stderr.length) {
-        this.logger.info(stderr);
+        this.logger.error(stderr);
       }
     }
   }

@@ -2,22 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { vitest, describe, test, expect, beforeAll, afterEach } from 'vitest';
 
-import { Stubs } from '../stubs';
-import { Commands } from '../../src';
+import { Stubs } from '../stubs.js';
+import { Commands } from '../../src/index.js';
 
 const PACKAGE_JSON_PATH = path.resolve(__dirname, '../fixtures/package.json');
 
-class FileWriteCommandStub extends Commands.FileWriterCommand {
-  private static readonly DEFAULT_OPTIONS: Commands.FileWriterCommandConfig = {
-    logger: new Stubs.LoggerStub(),
-    create: false,
-    mode: 'append',
-    content: '[CONTENT]',
-    absoluteFilePath: PACKAGE_JSON_PATH,
-  };
+const CMD_CONFIG: Commands.FileWriterCommandConfig = {
+  logger: new Stubs.NoopLogger(),
+  create: false,
+  mode: 'append',
+  content: '[CONTENT]',
+  absoluteFilePath: PACKAGE_JSON_PATH,
+};
 
-  constructor(options?: Partial<Commands.FileWriterCommandConfig>) {
-    super(Object.assign({}, FileWriteCommandStub.DEFAULT_OPTIONS, options));
+class FileWriterCommandStub extends Commands.FileWriterCommand {
+  constructor(config?: Partial<Commands.FileWriterCommandConfig>) {
+    super({ ...CMD_CONFIG, ...config });
   }
 }
 
@@ -42,7 +42,7 @@ describe('managing a file content', () => {
     const logger = new Stubs.LoggerStub();
     const expectedContent = 'EXPECTED_CONTENT';
     const filePath = path.resolve(__dirname, '../fixtures/does-not-exists.json');
-    const fileWriterCommand = new FileWriteCommandStub({
+    const fileWriterCommand = new FileWriterCommandStub({
       logger,
 
       create: true,
@@ -74,7 +74,7 @@ describe('managing a file content', () => {
     const logger = new Stubs.LoggerStub();
     const initialContent = 'INITIAL CONTENT';
     const expectedContent = 'EXPECTED CONTENT';
-    const fileWriterCommand = new FileWriteCommandStub({
+    const fileWriterCommand = new FileWriterCommandStub({
       logger,
 
       create: true,
@@ -109,7 +109,7 @@ describe('managing a file content', () => {
     const logger = new Stubs.LoggerStub();
     const expectedContent = 'EXPECTED_CONTENT';
     const filePath = path.resolve(__dirname, '../fixtures/does-not-exists.json');
-    const fileWriterCommand = new FileWriteCommandStub({
+    const fileWriterCommand = new FileWriterCommandStub({
       logger,
 
       create: true,
@@ -155,7 +155,7 @@ describe('managing a file content', () => {
 
     for (const testCase of cases) {
       const logger = new Stubs.LoggerStub();
-      const fileWriterCommand = new FileWriteCommandStub({
+      const fileWriterCommand = new FileWriterCommandStub({
         logger,
 
         content: newContent,
