@@ -52,7 +52,7 @@ jobs:
         run: npm install
 
       - name: Lint Code
-        run: npm run lint:all
+        run: npm run lint
 
       # https://commitlint.js.org/guides/ci-setup.html#github-actions
       - name: Lint Commit Messages

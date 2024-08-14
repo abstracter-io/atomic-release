@@ -20,8 +20,8 @@
   },
   "scripts": {
     "outdated": "npx npm-check -u",
-    "lint": "eslint --format pretty --fix",
-    "lint:all": "npm run lint -- .",
+    "lint": "eslint --format pretty",
+    "lint:fix": "npm run lint -- --fix .",
     "prepare": "husky",
     "build": "tsc --pretty",
     "postbuild": "copyfiles -u 1 src/**/*.d.ts build",

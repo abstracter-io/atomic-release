@@ -7,7 +7,7 @@ export default (allStagedFiles) => {
   const testables = micromatch(allStagedFiles, ['src/**'], {});
 
   if (lintables.length) {
-    commands.push(`npm run lint -- ${lintables.join(' ')}`);
+    commands.push(`npm run lint:fix -- ${lintables.join(' ')}`);
   }
 
   if (testables.length) {
