@@ -91,7 +91,7 @@ class GitClientStub extends SDK.GitExecClient {
   });
 
   listTags = vitest.fn(async () => {
-    const name = 'v0.1.0';
+    const name = 'v0.1.0-beta.0';
     const hash = GitClientStub.HASH;
 
     return [{ name, hash }];

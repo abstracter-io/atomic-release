@@ -15,6 +15,12 @@ type ConventionalPreset = {
   whatBump: (commits: ConventionalCommit[]) => { level: number; reason: string };
 };
 
+type FilterPreviousVersionContext = {
+  version: string;
+  preReleaseId: string | null;
+  versionPreReleaseId: string | null;
+};
+
 type GitTagBasedReleaseConfig = {
   logger?: Logger;
 
@@ -22,7 +28,11 @@ type GitTagBasedReleaseConfig = {
 
   gitClient?: GitExecClient;
 
+  filterPreviousVersion?: (context: FilterPreviousVersionContext) => Promise<boolean>;
+
   initialVersion?: string;
+
+  isReleaseCommit?: (commit: ConventionalCommit) => boolean;
 
   workingDirectory?: string;
 
@@ -30,19 +40,13 @@ type GitTagBasedReleaseConfig = {
 
   rawConventionalCommits?: (range: string) => Promise<{ hash: string; raw: string }[]>;
 
-  isReleaseCommit?: (commit: ConventionalCommit) => boolean;
-
   conventionalChangelogPreset?: ConventionalPreset;
 
   conventionalChangelogWriterContext?: WriterContext | null;
 };
 
-type Options = Required<GitTagBasedReleaseConfig>;
-
-const sortTags = (tags: Tag[]): Tag[] => {
-  return tags.sort((a, b) => {
-    return semver.rcompare(a.name, b.name);
-  });
+const sortTags = (a: Tag, b: Tag) => {
+  return semver.rcompare(a.name, b.name);
 };
 
 const inc = (version: string, type: string, preReleaseId?: string) => {
@@ -72,7 +76,7 @@ const clean = (tagName: string) => {
   return version;
 };
 
-const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Options> => {
+const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Required<GitTagBasedReleaseConfig>> => {
   const remote = config.remote ?? 'origin';
   const workingDirectory = config.workingDirectory ?? process.cwd();
   const gitClient = config.gitClient ?? new GitExecClient({
@@ -120,15 +124,19 @@ const defaultConfig = async (config: GitTagBasedReleaseConfig): Promise<Options>
       };
     });
   };
+  const filterPreviousVersion = async (context: FilterPreviousVersionContext) => {
+    return context.preReleaseId === context.versionPreReleaseId;
+  };
 
   return {
     remote,
     gitClient,
     workingDirectory,
     logger: config.logger ?? processStdoutLogger({ name: 'gitTagBasedRelease' }),
+    filterPreviousVersion: config.filterPreviousVersion ?? filterPreviousVersion,
     initialVersion: config.initialVersion ?? '0.0.0',
-    preReleaseBranches: config.preReleaseBranches ?? new Set(),
     isReleaseCommit: config.isReleaseCommit ?? isReleaseCommit,
+    preReleaseBranches: config.preReleaseBranches ?? new Set(),
     rawConventionalCommits: config.rawConventionalCommits ?? rawConventionalCommits,
     conventionalChangelogPreset: config.conventionalChangelogPreset ?? (await loadPreset('conventionalcommits')),
     conventionalChangelogWriterContext: config.conventionalChangelogWriterContext ?? null,
@@ -176,29 +184,46 @@ const gitTagBasedRelease = async (config: GitTagBasedReleaseConfig = {}): Promis
     ]);
     const filteredTags: Tag[] = [];
     const selectedTags: Tag[] = [];
+    const promises: Promise<void>[] = [];
 
-    for (const tag of tags) {
+    for (let i = 0; i < tags.length; i += 1) {
+      const tag = tags[i];
       const preReleaseComponents = semver.prerelease(tag.name) as string[] | null;
       const tagPreReleaseId = preReleaseComponents?.[0] ?? undefined;
 
       if (!semver.valid(tag.name)) {
         logger.debug(`Filtered tag '${tag.name}'. Tag name is not a valid semantic version`);
 
-        filteredTags.push(tag);
+        filteredTags[i] = tag;
       }
-      else if (tagPreReleaseId === undefined) {
-        selectedTags.push(tag);
-      }
-      else if (preReleaseId && tagPreReleaseId === preReleaseId) {
-        selectedTags.push(tag);
+      else {
+        const filter = opt.filterPreviousVersion({
+          version: clean(tag.name),
+          preReleaseId: preReleaseId ?? null,
+          versionPreReleaseId: tagPreReleaseId ?? null,
+        });
+        const addToArray = (bool: boolean) => {
+          if (bool) {
+            selectedTags[i] = tag;
+          }
+          else {
+            filteredTags[i] = tag;
+          }
+
+          return;
+        };
+
+        promises.push(filter.then(addToArray));
       }
     }
+
+    await Promise.all(promises);
 
     if (filteredTags.length) {
       logger.info(`Filtered ${filteredTags.length} tag(s)`);
     }
 
-    return sortTags(selectedTags);
+    return selectedTags.sort(sortTags);
   });
 
   const getConventionalCommits = memo(async (): Promise<ConventionalCommit[]> => {

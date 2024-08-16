@@ -4,10 +4,9 @@ import conventionalChangelogPreset from 'conventional-changelog-conventionalcomm
 import { Stubs } from '../stubs.js';
 import { SDK } from '../../src/index.js';
 
-const releaseOptions = () => {
+const releaseOptions = (): SDK.GitTagBasedReleaseConfig => {
   return {
     logger: Stubs.NoopLogger.INSTANCE,
-    stableBranchName: Stubs.GitClientStub.STABLE_BRANCH_NAME,
     preReleaseBranches: new Set([Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME]),
     conventionalChangelogWriterContext: {
       owner: 't',
@@ -168,19 +167,27 @@ describe('git tag based release', () => {
   });
 
   test('lists tags as released versions', async () => {
-    const version = '0.1.0';
-    const tag = { name: `v${version}`, hash: Stubs.GitClientStub.HASH };
+    const versions = ['2.0.0', '1.0.0'];
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
     });
 
-    gitClient.listTags.mockImplementation(async () => {
-      return [tag];
+    gitClient.refName.mockImplementationOnce(async () => {
+      return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
-    expect(await release.listVersions(1)).toStrictEqual([version]);
+    gitClient.listTags.mockImplementationOnce(async () => {
+      return versions.map((version) => {
+        return {
+          name: `v${version}`,
+          hash: Stubs.GitClientStub.HASH,
+        };
+      });
+    });
+
+    await expect(release.listVersions(2)).resolves.toStrictEqual(versions);
 
     expect(gitClient.listTags).toBeCalledWith();
   });
@@ -222,9 +229,7 @@ describe('git tag based release', () => {
       },
     });
 
-    const changelog = await release.getChangelog();
-
-    expect(changelog).toMatchSnapshot();
+    await expect(release.getChangelog()).resolves.toMatchSnapshot();
   });
 
   test('list issues mentioned in commits', async () => {
@@ -339,12 +344,35 @@ describe('git tag based release', () => {
       return [];
     });
 
-    expect(await release.getPreviousVersion()).toStrictEqual(initialVersion);
+    await expect(release.getPreviousVersion()).resolves.toStrictEqual(initialVersion);
 
     expect(logger.info).toBeCalledWith(`Could not find a previous version. Will use ${initialVersion} as initial version`);
   });
 
   test('previous version is the most recent stable version', async () => {
+    const gitClient = new Stubs.GitClientStub();
+    const release = await SDK.gitTagBasedRelease({
+      ...releaseOptions(),
+      gitClient,
+      async filterPreviousVersion() { return true; },
+    });
+
+    gitClient.refName.mockImplementation(async () => {
+      return Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME;
+    });
+
+    gitClient.listTags.mockImplementation(async () => {
+      // '1.0.1' is more recent than '1.0.0-beta.0' according to the semver spec
+      return [
+        { name: 'v1.0.0-beta.0', hash: Stubs.GitClientStub.HASH },
+        { name: `v1.0.1`, hash: Stubs.GitClientStub.HASH },
+      ];
+    });
+
+    await expect(release.getPreviousVersion()).resolves.toStrictEqual('1.0.1');
+  });
+
+  test('previous version is the most recent pre released version', async () => {
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
@@ -356,14 +384,13 @@ describe('git tag based release', () => {
     });
 
     gitClient.listTags.mockImplementation(async () => {
-      // 1.0.1 is more recent (thus previous) than versions with prerelease components
       return [
-        { name: 'v1.0.0-beta.0', hash: Stubs.GitClientStub.HASH },
         { name: `v1.0.1`, hash: Stubs.GitClientStub.HASH },
+        { name: 'v1.0.0-beta.0', hash: Stubs.GitClientStub.HASH },
       ];
     });
 
-    await expect(release.getPreviousVersion()).resolves.toStrictEqual('1.0.1');
+    await expect(release.getPreviousVersion()).resolves.toStrictEqual('1.0.0-beta.0');
   });
 
   test('previous version is most recent prerelease version', async () => {
@@ -396,8 +423,21 @@ describe('git tag based release', () => {
       rawConventionalCommits,
     });
 
-    rawConventionalCommits.mockImplementation(() => {
+    rawConventionalCommits.mockImplementationOnce(() => {
       return [];
+    });
+
+    gitClient.refName.mockImplementationOnce(async () => {
+      return Stubs.GitClientStub.STABLE_BRANCH_NAME;
+    });
+
+    gitClient.listTags.mockImplementationOnce(async () => [{
+      name: `v1.0.0`,
+      hash: Stubs.GitClientStub.HASH,
+    }]);
+
+    gitClient.refName.mockImplementationOnce(async () => {
+      return Stubs.GitClientStub.STABLE_BRANCH_NAME;
     });
 
     await release.getNextVersion();
@@ -427,13 +467,16 @@ describe('git tag based release', () => {
     expect(rawConventionalCommits).toBeCalledWith(Stubs.GitClientStub.HASH);
   });
 
-  test('versions are derived from pre release and stable tags', async () => {
-    const stableTag = { name: 'v0.1.0', hash: Stubs.GitClientStub.HASH };
-    const preReleaseTag = { name: `v0.1.1-${Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME}.0`, hash: Stubs.GitClientStub.HASH };
+  test('versions are pre release and stable tags', async () => {
+    const versions = [
+      '0.1.2',
+      `0.1.1-${Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME}.0`,
+    ];
     const gitClient = new Stubs.GitClientStub();
     const release = await SDK.gitTagBasedRelease({
       ...releaseOptions(),
       gitClient,
+      filterPreviousVersion: async () => true,
     });
 
     gitClient.refName.mockImplementation(async () => {
@@ -441,19 +484,15 @@ describe('git tag based release', () => {
     });
 
     gitClient.listTags.mockImplementation(async () => {
-      return [
-        preReleaseTag,
-        stableTag,
-
-        // This is a tag of another branch, it should not be included
-        { name: 'v0.1.1-next.0', hash: Stubs.GitClientStub.HASH },
-      ];
+      return versions.map((version) => {
+        return {
+          name: `v${version}`,
+          hash: Stubs.GitClientStub.HASH,
+        };
+      });
     });
 
-    expect(await release.listVersions(2)).toStrictEqual([
-      preReleaseTag.name.slice(1),
-      stableTag.name.slice(1),
-    ]);
+    await expect(release.listVersions(2)).resolves.toStrictEqual(versions);
   });
 
   test('previous version fails when initial version is invalid', async () => {

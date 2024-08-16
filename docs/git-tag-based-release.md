@@ -18,6 +18,22 @@ Default: [processStdoutLogger](../adapters/process-stdout-logger.md)
 Type: [GitClient](./git-client.md)  
 Default: [GitExecClient](./git-exec-client.md)
 
+#### filterPreviousVersion*
+
+Type: `function`
+
+A function that accepts a single parameter with the following properties:
+
+```ts
+type FilterPreviousVersionContext = {
+    version: string; // 1.0.1-beta.0
+    preReleaseId: string | null; // The pre release id based on the currrent branch. See the 'preReleaseBranches'
+    versionPreReleaseId: string | null; // The version pre release id: '1.0.1-beta.0' -> 'beta'
+}
+```
+
+The default function returns `true` when `preReleaseId` strictly match `versionPreReleaseId`.
+
 #### remote*
 
 Type: `string`  
@@ -54,12 +70,12 @@ Deciding the next version is done by the preset `whatBump` function.
 
 Type: `function`
 
-A callback that accepts a git log range (a string) and returns a promise for array of object literals. Each object literal
+A function that accepts a git log range (a string) and returns a promise for array of object literals. Each object literal
 has two properties, "hash" which is the commit hash and "raw" which is a string.
 
 The "raw" value of each element in the array is then mapped to a "conventional commit" by using the conventional-changelog-parser package.
 
-The callback by default is:
+The function by default is:
 
 ```js
 const rawConventionalCommits = async (range) => {
