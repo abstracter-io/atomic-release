@@ -10,7 +10,7 @@ exports[`github npm package strategy > commands state 1`] = `
         "info": [Function],
         "warn": [Function],
       },
-      "name": "v0.1.1-beta.0",
+      "name": "v1.0.0",
       "remote": "origin-test",
       "workingDirectory": "/this/is/sparta",
     },
@@ -24,12 +24,16 @@ exports[`github npm package strategy > commands state 1`] = `
     },
     "remote": "origin-test",
     "remoteTagCreated": false,
-    "tagRef": "refs/tags/v0.1.1-beta.0",
+    "tagRef": "refs/tags/v1.0.0",
   },
   GithubCreateReleaseCommand {
     "_fetch": [Function],
     "config": {
-      "body": "## 0.1.1-beta.0 (2024-08-05)
+      "body": "## 1.0.0 (2024-08-05)
+
+### ⚠ BREAKING CHANGES
+
+* ...
 
 ### Features
 
@@ -46,10 +50,10 @@ exports[`github npm package strategy > commands state 1`] = `
         "info": [Function],
         "warn": [Function],
       },
-      "name": "v0.1.1-beta.0",
+      "name": "v1.0.0",
       "owner": "abstracter-io",
       "repo": "atomic-release",
-      "tagName": "v0.1.1-beta.0",
+      "tagName": "v1.0.0",
     },
     "createdRelease": undefined,
     "logger": NoopLogger {
@@ -92,7 +96,7 @@ exports[`github npm package strategy > commands state 1`] = `
         "info": [Function],
         "warn": [Function],
       },
-      "version": "0.1.1-beta.0",
+      "version": "1.0.0",
       "workingDirectory": "/this/is/sparta",
     },
     "createChildProcess": [Function],

@@ -5,11 +5,10 @@ import { SDK, Commands } from '../../src/index.js';
 
 const WORKING_DIRECTORY = '/this/is/sparta';
 
-const releaseConfig = () => {
+const releaseConfig = (): SDK.GitTagBasedReleaseConfig => {
   return {
     gitClient: new Stubs.GitClientStub(),
     logger: Stubs.NoopLogger.INSTANCE,
-    stableBranchName: Stubs.GitClientStub.STABLE_BRANCH_NAME,
     preReleaseBranches: new Set([Stubs.GitClientStub.PRE_RELEASE_BRANCH_NAME]),
     conventionalChangelogWriterContext: {
       owner: 'owner',
@@ -38,11 +37,34 @@ const strategyConfig = (): SDK.GithubNpmPackageStrategyConfig => {
 
 describe('github npm package strategy', () => {
   test('commands state', async () => {
-    const release = await SDK.gitTagBasedRelease(releaseConfig());
+    const gitClient = new Stubs.GitClientStub();
+    const release = await SDK.gitTagBasedRelease({
+      ...releaseConfig(),
+      gitClient,
+    });
     const strategy = await SDK.githubNpmPackageStrategy({
       ...strategyConfig(),
       release,
+      gitClient,
       releaseBranchNames: new Set(['test']),
+    });
+
+    gitClient.refName.mockImplementationOnce(async () => {
+      return Stubs.GitClientStub.STABLE_BRANCH_NAME;
+    });
+
+    gitClient.listTags.mockImplementationOnce(async () => {
+      return [{
+        name: 'v0.0.0',
+        hash: Stubs.GitClientStub.HASH,
+      }];
+    });
+
+    gitClient.commits.mockImplementationOnce(async () => {
+      return [{
+        ...Stubs.conventionalCommit(),
+        subject: 'feat!: ...',
+      }];
     });
 
     await Stubs.fixedDate(new Date('2024-08-05'), async () => {

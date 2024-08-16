@@ -3,7 +3,7 @@ import { ChildProcess, spawn as nodeSpawn, SpawnOptionsWithoutStdio } from 'node
 
 type ExecCommand = string | { command: string; args: string[] };
 
-type ExecaResult = {
+type ExecResult = {
   stdout: string;
   stderr: string;
   childProcess: ChildProcess;
@@ -22,7 +22,7 @@ const extractCommandAndArgs = (cmd: ExecCommand) => {
   return cmd;
 };
 
-const exec = (cmd: ExecCommand, options: SpawnOptionsWithoutStdio): Promise<ExecaResult> => {
+const exec = (cmd: ExecCommand, options: SpawnOptionsWithoutStdio): Promise<ExecResult> => {
   return new Promise((resolve, reject) => {
     try {
       const { command, args } = extractCommandAndArgs(cmd);
@@ -55,4 +55,4 @@ const exec = (cmd: ExecCommand, options: SpawnOptionsWithoutStdio): Promise<Exec
 
 export { exec };
 
-export type { ExecCommand, SpawnOptionsWithoutStdio as ExecOptions, ExecaResult };
+export type { ExecCommand, SpawnOptionsWithoutStdio as ExecOptions, ExecResult };

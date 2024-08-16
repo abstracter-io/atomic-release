@@ -30,7 +30,7 @@ abstract class ExecCommand<T extends ExecCommandConfig> extends Command<T> {
 
   protected createChildProcess = exec;
 
-  protected async exec(command: Exec.ExecCommand, options?: Exec.ExecOptions): Promise<Exec.ExecaResult> {
+  protected async exec(command: Exec.ExecCommand, options?: Exec.ExecOptions): Promise<Exec.ExecResult> {
     const result = await this.createChildProcess(command, {
       cwd: this.config.workingDirectory,
       ...options,
