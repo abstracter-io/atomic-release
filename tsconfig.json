@@ -2,22 +2,21 @@
 {
   "compilerOptions": {
     "lib": [],
-    "noLib": false,
     "target": "esnext",
     "module": "nodenext",
-    "allowJs": true,
-    "declaration": true,
-    "outDir": "./build",
-    "removeComments": false,
-    "strictNullChecks": true,
-
     "moduleResolution": "nodenext",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
+
+    "outDir": "./build",
+    "incremental": true,
+    "declaration": true,
+    "removeComments": false,
 
     "baseUrl": ".",
+    "allowJs": false,
+    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+
     "paths": {
       "conventional-commits-parser": [
         "node_modules/conventional-commits-parser/dist",
@@ -30,11 +29,9 @@
       ]
     },
   },
-
   "include": [
     "src",
   ],
-
   "exclude": [
     "node_modules"
   ]
