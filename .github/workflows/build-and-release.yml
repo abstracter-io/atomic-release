@@ -62,9 +62,6 @@ jobs:
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Lint Code
-        run: npm run lint
-
       # https://commitlint.js.org/guides/ci-setup.html#github-actions
       - name: Lint Commit Messages
         run: |
@@ -76,6 +73,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Lint after the build: scripts/release.js imports this package by name, and
+      # the self reference resolves through the exports field into build/, which
+      # does not exist until the build runs. Linting first fails with
+      # n/no-missing-import, which is why every run of this workflow since 2025
+      # has been red.
+      - name: Lint Code
+        run: npm run lint
 
       - name: Test
         run: npm run test
