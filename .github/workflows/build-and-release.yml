@@ -5,6 +5,9 @@ on:
     branches:
       - "**"
 
+  # release on demand, so that a green build is not the same thing as a release
+  workflow_dispatch:
+
 env:
   CI: true
   HUSKY: 0
@@ -20,27 +23,35 @@ jobs:
 
     if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') }}
 
+    permissions:
+      # push the version bump commit and the tag, create the github release
+      contents: write
+      # atomic-release comments on issues and pull requests mentioned in the changelog
+      issues: write
+      pull-requests: write
+      # mint the OIDC token npm exchanges for a short lived publish token
+      id-token: write
+
     runs-on: ubuntu-latest
 
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          token: ${{ secrets.BOT_PAT }}
           fetch-depth: 0
           persist-credentials: true
 
       # https://github.com/actions/setup-node
       - name: Setup Node.js
         id: setup-node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
       # https://github.com/actions/cache
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: npm-cache
         with:
           path: node_modules
@@ -72,6 +83,5 @@ jobs:
       - name: Release
         run: npm run release
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           RELEASE_ACTOR: abstracter-bot <bot@abstracter.io>
-          GITHUB_PAT_TOKEN: ${{ secrets.BOT_PAT }}
+          GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
